@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, ShoppingCart, User, Store, Clock, Package, Star, Filter, X, Home, Heart, Bell, TrendingUp, Zap, BadgeCheck, ChevronRight, Tag, Truck, Shield } from 'lucide-react';
+import { Search, MapPin, ShoppingCart, User, Store, Clock, Package, Star, Filter, X, Home, Heart, Bell, TrendingUp, Zap, BadgeCheck, ChevronRight, Tag, Truck, Shield, Phone, MessageCircle, CheckCircle, Navigation, AlertCircle } from 'lucide-react';
 
 // Mock data with enhanced details
 const MOCK_STORES = [
@@ -34,6 +34,13 @@ const OFFERS = [
   { title: "Free Delivery", discount: "₹0 Fee", subtitle: "On all orders today", color: "from-green-600 to-teal-600" },
 ];
 
+const ORDER_STATUSES = [
+  { id: 1, label: "Order Placed", icon: CheckCircle, time: "Just now" },
+  { id: 2, label: "Preparing", icon: Package, time: "2 mins" },
+  { id: 3, label: "Out for Delivery", icon: Truck, time: "5 mins" },
+  { id: 4, label: "Delivered", icon: CheckCircle, time: "12 mins" }
+];
+
 export default function KnockKnockApp() {
   const [currentScreen, setCurrentScreen] = useState('splash');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -42,7 +49,12 @@ export default function KnockKnockApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [userLocation, setUserLocation] = useState('Avadi, Tamil Nadu');
-  const [showAnimation, setShowAnimation] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [orderStatus, setOrderStatus] = useState(1);
+  const [deliveryProgress, setDeliveryProgress] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(720); // 12 minutes in seconds
 
   useEffect(() => {
     if (currentScreen === 'splash') {
@@ -50,22 +62,49 @@ export default function KnockKnockApp() {
     }
   }, [currentScreen]);
 
+  // Order tracking simulation
   useEffect(() => {
-    if (showAnimation) {
-      setTimeout(() => setShowAnimation(false), 500);
+    if (currentScreen === 'tracking' && currentOrder) {
+      const statusInterval = setInterval(() => {
+        setOrderStatus(prev => {
+          if (prev < 4) return prev + 1;
+          clearInterval(statusInterval);
+          return prev;
+        });
+      }, 8000); // Change status every 8 seconds
+
+      const progressInterval = setInterval(() => {
+        setDeliveryProgress(prev => {
+          if (prev < 100) return prev + 1;
+          clearInterval(progressInterval);
+          return 100;
+        });
+      }, 120); // Complete in ~2 minutes for demo
+
+      const timerInterval = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev > 0 && orderStatus < 4) return prev - 1;
+          if (orderStatus >= 4) clearInterval(timerInterval);
+          return prev;
+        });
+      }, 1000);
+
+      return () => {
+        clearInterval(statusInterval);
+        clearInterval(progressInterval);
+        clearInterval(timerInterval);
+      };
     }
-  }, [currentScreen]);
+  }, [currentScreen, currentOrder]);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
     setCurrentScreen('home');
-    setShowAnimation(true);
   };
 
   const handleSignup = () => {
     setIsLoggedIn(true);
     setCurrentScreen('home');
-    setShowAnimation(true);
   };
 
   const addToCart = (product) => {
@@ -89,6 +128,34 @@ export default function KnockKnockApp() {
     }).filter(item => item.cartQuantity > 0));
   };
 
+  const handlePlaceOrder = () => {
+    const newOrder = {
+      id: `KK${Date.now()}`,
+      items: [...cart],
+      total: cartTotal,
+      savings: cartSavings,
+      status: 'placed',
+      timestamp: new Date().toISOString(),
+      deliveryPerson: {
+        name: "Rajesh Kumar",
+        phone: "+91 98765 43210",
+        rating: 4.8,
+        vehicle: "Bike"
+      }
+    };
+    
+    setOrders([newOrder, ...orders]);
+    setCurrentOrder(newOrder);
+    setCart([]);
+    setOrderStatus(1);
+    setDeliveryProgress(0);
+    setTimeRemaining(720);
+    setShowConfetti(true);
+    setCurrentScreen('orderSuccess');
+    
+    setTimeout(() => setShowConfetti(false), 3000);
+  };
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.cartQuantity), 0);
   const cartMRP = cart.reduce((sum, item) => sum + (item.mrp * item.cartQuantity), 0);
   const cartSavings = cartMRP - cartTotal;
@@ -100,6 +167,12 @@ export default function KnockKnockApp() {
     const matchesStore = !selectedStore || p.storeId === selectedStore.id;
     return matchesSearch && matchesCategory && matchesStore;
   });
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Splash Screen
   if (currentScreen === 'splash') {
@@ -244,6 +317,450 @@ export default function KnockKnockApp() {
                 Already have an account? Login
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Order Success Screen
+  if (currentScreen === 'orderSuccess') {
+    return (
+      <div className="h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col relative overflow-hidden">
+        {/* Confetti Animation */}
+        {showConfetti && (
+          <div className="absolute inset-0 pointer-events-none z-50">
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-bounce"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `-20px`,
+                  animationDelay: `${Math.random() * 0.5}s`,
+                  animationDuration: `${1 + Math.random()}s`
+                }}
+              >
+                {['🎉', '🎊', '✨', '🌟'][Math.floor(Math.random() * 4)]}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            {/* Success Animation */}
+            <div className="text-center mb-8 animate-pulse">
+              <div className="w-32 h-32 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl">
+                <CheckCircle size={80} className="text-white" />
+              </div>
+              <h1 className="text-4xl font-black text-gray-900 mb-3">Order Placed!</h1>
+              <p className="text-xl text-gray-600 mb-2">Your order is on its way</p>
+              <p className="text-gray-500">Expected delivery in 10-12 mins</p>
+            </div>
+
+            {/* Order Details Card */}
+            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+              <div className="flex items-center justify-between mb-4 pb-4 border-b-2 border-gray-100">
+                <div>
+                  <div className="text-sm text-gray-500">Order ID</div>
+                  <div className="font-bold text-lg">{currentOrder?.id}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">Total Amount</div>
+                  <div className="font-black text-2xl text-green-600">₹{currentOrder?.total.toLocaleString()}</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <Package className="text-purple-600" size={20} />
+                  <span className="text-gray-600">{currentOrder?.items.length} items</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <MapPin className="text-purple-600" size={20} />
+                  <span className="text-gray-600">Delivering to {userLocation}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Clock className="text-purple-600" size={20} />
+                  <span className="text-gray-600">10-12 minutes</span>
+                </div>
+              </div>
+
+              {currentOrder?.savings > 0 && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center">
+                  <span className="text-green-700 font-bold">
+                    🎉 You saved ₹{currentOrder.savings.toLocaleString()} on this order!
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button 
+                onClick={() => setCurrentScreen('tracking')}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
+              >
+                <Navigation size={24} />
+                <span>Track Order Live</span>
+              </button>
+
+              <button 
+                onClick={() => setCurrentScreen('home')}
+                className="w-full bg-white text-purple-600 py-4 rounded-xl font-bold text-lg border-2 border-purple-600 hover:bg-purple-50 transition transform active:scale-95"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Live Order Tracking Screen
+  if (currentScreen === 'tracking') {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 shadow-lg">
+          <div className="flex items-center justify-between mb-3">
+            <button 
+              onClick={() => setCurrentScreen('orders')}
+              className="p-2 hover:bg-white/20 rounded-lg transition"
+            >
+              <ChevronRight size={24} className="rotate-180" />
+            </button>
+            <div className="text-center flex-1">
+              <h1 className="text-xl font-black">Live Tracking</h1>
+              <p className="text-sm opacity-90">Order #{currentOrder?.id}</p>
+            </div>
+            <button className="p-2 hover:bg-white/20 rounded-lg transition">
+              <Bell size={24} />
+            </button>
+          </div>
+
+          {/* ETA Timer */}
+          <div className="bg-white/20 backdrop-blur rounded-2xl p-4 text-center">
+            <div className="text-sm opacity-90 mb-1">Estimated Delivery Time</div>
+            <div className="text-4xl font-black">{formatTime(timeRemaining)}</div>
+            <div className="text-xs opacity-90 mt-1">mins remaining</div>
+          </div>
+        </div>
+
+        {/* Map Area (Simulated) */}
+        <div className="relative h-64 bg-gradient-to-br from-blue-100 to-purple-100 overflow-hidden">
+          {/* Animated Delivery Route */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative w-full h-full">
+              {/* Route Line */}
+              <svg className="absolute inset-0 w-full h-full">
+                <path
+                  d="M 50 200 Q 150 100 250 50"
+                  stroke="#8B5CF6"
+                  strokeWidth="3"
+                  fill="none"
+                  strokeDasharray="10,5"
+                />
+              </svg>
+
+              {/* Store Pin */}
+              <div className="absolute bottom-12 left-12 flex flex-col items-center animate-bounce">
+                <Store size={32} className="text-purple-600 bg-white rounded-full p-2 shadow-lg" />
+                <div className="text-xs font-bold mt-1 bg-white px-2 py-1 rounded-full shadow">Store</div>
+              </div>
+
+              {/* Delivery Person (Animated) */}
+              <div 
+                className="absolute transition-all duration-1000 ease-linear"
+                style={{
+                  left: `${20 + (deliveryProgress * 0.6)}%`,
+                  top: `${80 - (deliveryProgress * 0.5)}%`
+                }}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="bg-green-500 text-white rounded-full p-3 shadow-2xl animate-pulse">
+                    <Truck size={24} />
+                  </div>
+                  <div className="text-xs font-bold mt-1 bg-green-500 text-white px-2 py-1 rounded-full shadow">
+                    {currentOrder?.deliveryPerson.name.split(' ')[0]}
+                  </div>
+                </div>
+              </div>
+
+              {/* Your Location */}
+              <div className="absolute top-8 right-12 flex flex-col items-center">
+                <MapPin size={32} className="text-red-600 bg-white rounded-full p-2 shadow-lg animate-bounce" />
+                <div className="text-xs font-bold mt-1 bg-white px-2 py-1 rounded-full shadow">You</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto p-4 pb-24">
+          {/* Delivery Person Card */}
+          <div className="bg-white rounded-3xl shadow-lg p-4 mb-4">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-black">
+                {currentOrder?.deliveryPerson.name.charAt(0)}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">{currentOrder?.deliveryPerson.name}</h3>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                  <span>{currentOrder?.deliveryPerson.rating}</span>
+                  <span>•</span>
+                  <span>{currentOrder?.deliveryPerson.vehicle}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button className="p-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition">
+                  <Phone size={20} />
+                </button>
+                <button className="p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition">
+                  <MessageCircle size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-gray-600 mb-2">
+                <span>Picked up</span>
+                <span>{deliveryProgress}% complete</span>
+              </div>
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500 rounded-full"
+                  style={{width: `${deliveryProgress}%`}}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Status Timeline */}
+          <div className="bg-white rounded-3xl shadow-lg p-6 mb-4">
+            <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+              <Package className="text-purple-600" />
+              Order Status
+            </h3>
+
+            <div className="space-y-4">
+              {ORDER_STATUSES.map((status, index) => {
+                const isCompleted = index < orderStatus;
+                const isCurrent = index === orderStatus - 1;
+                const Icon = status.icon;
+
+                return (
+                  <div key={status.id} className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
+                      isCompleted || isCurrent
+                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-400'
+                    } ${isCurrent ? 'animate-pulse scale-110' : ''}`}>
+                      <Icon size={24} />
+                    </div>
+
+                    <div className="flex-1">
+                      <div className={`font-bold ${isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {status.label}
+                      </div>
+                      {isCompleted && (
+                        <div className="text-sm text-gray-500">{status.time} ago</div>
+                      )}
+                      {isCurrent && (
+                        <div className="text-sm text-purple-600 font-semibold">In Progress...</div>
+                      )}
+                    </div>
+
+                    {isCompleted && (
+                      <CheckCircle size={20} className="text-green-500" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Order Items */}
+          <div className="bg-white rounded-3xl shadow-lg p-6">
+            <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+              <Package className="text-purple-600" />
+              Your Items ({currentOrder?.items.length})
+            </h3>
+
+            <div className="space-y-3">
+              {currentOrder?.items.map(item => (
+                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="text-3xl">{item.image}</div>
+                  <div className="flex-1">
+                    <div className="font-bold text-sm">{item.name}</div>
+                    <div className="text-xs text-gray-500">Qty: {item.cartQuantity}</div>
+                  </div>
+                  <div className="font-bold">₹{(item.price * item.cartQuantity).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-4 border-t-2 border-gray-100 flex justify-between items-center">
+              <span className="font-bold">Total Amount</span>
+              <span className="font-black text-2xl text-purple-600">₹{currentOrder?.total.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Action */}
+        <div className="bg-white border-t p-4 shadow-lg">
+          {orderStatus === 4 ? (
+            <button 
+              onClick={() => {
+                setCurrentScreen('home');
+                setCurrentOrder(null);
+              }}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg"
+            >
+              <CheckCircle size={24} />
+              <span>Order Delivered!</span>
+            </button>
+          ) : (
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setCurrentScreen('home')}
+                className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-200 transition"
+              >
+                Continue Shopping
+              </button>
+              <button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition">
+                Need Help?
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Orders History Screen
+  if (currentScreen === 'orders') {
+    return (
+      <div className="h-screen bg-gray-50 flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 shadow-lg">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setCurrentScreen('home')}
+              className="p-2 hover:bg-white/20 rounded-lg transition"
+            >
+              <ChevronRight size={24} className="rotate-180" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-black">My Orders</h1>
+              <p className="text-sm opacity-90">{orders.length} total orders</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Orders List */}
+        <div className="flex-1 overflow-auto p-4">
+          {orders.length === 0 ? (
+            <div className="text-center py-20">
+              <Package size={80} className="mx-auto mb-4 text-gray-300" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">No orders yet</h2>
+              <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
+              <button 
+                onClick={() => setCurrentScreen('home')}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg"
+              >
+                Start Shopping
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {orders.map(order => (
+                <div key={order.id} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="font-bold text-lg">Order #{order.id}</div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(order.timestamp).toLocaleDateString()} at {new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        order.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {order.status === 'delivered' ? 'Delivered' : 'In Transit'}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+                      <Package size={16} />
+                      <span>{order.items.length} items</span>
+                      <span>•</span>
+                      <span className="font-bold text-gray-900">₹{order.total.toLocaleString()}</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setCurrentOrder(order);
+                          setCurrentScreen('tracking');
+                        }}
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition"
+                      >
+                        Track Order
+                      </button>
+                      <button className="px-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
+                        Reorder
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="bg-white border-t shadow-2xl">
+          <div className="flex justify-around p-3">
+            <button 
+              onClick={() => setCurrentScreen('home')}
+              className="flex flex-col items-center gap-1 text-gray-600 transition transform active:scale-90"
+            >
+              <div className="bg-gray-100 p-2 rounded-xl">
+                <Home size={24} />
+              </div>
+              <span className="text-xs font-semibold">Home</span>
+            </button>
+            <button 
+              onClick={() => setCurrentScreen('cart')}
+              className="flex flex-col items-center gap-1 text-gray-600 relative transition transform active:scale-90"
+            >
+              <div className="bg-gray-100 p-2 rounded-xl relative">
+                <ShoppingCart size={24} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs font-semibold">Cart</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-purple-600 transition transform active:scale-90">
+              <div className="bg-purple-100 p-2 rounded-xl">
+                <Package size={24} />
+              </div>
+              <span className="text-xs font-bold">Orders</span>
+            </button>
+            <button className="flex flex-col items-center gap-1 text-gray-600 transition transform active:scale-90">
+              <div className="bg-gray-100 p-2 rounded-xl">
+                <User size={24} />
+              </div>
+              <span className="text-xs font-semibold">Profile</span>
+            </button>
           </div>
         </div>
       </div>
@@ -501,9 +1018,17 @@ export default function KnockKnockApp() {
               </div>
               <span className="text-xs font-semibold">Cart</span>
             </button>
-            <button className="flex flex-col items-center gap-1 text-gray-600 transition transform active:scale-90">
-              <div className="bg-gray-100 p-2 rounded-xl">
+            <button 
+              onClick={() => setCurrentScreen('orders')}
+              className="flex flex-col items-center gap-1 text-gray-600 transition transform active:scale-90"
+            >
+              <div className="bg-gray-100 p-2 rounded-xl relative">
                 <Package size={24} />
+                {orders.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                    {orders.length}
+                  </span>
+                )}
               </div>
               <span className="text-xs font-semibold">Orders</span>
             </button>
@@ -667,8 +1192,11 @@ export default function KnockKnockApp() {
               </div>
 
               {/* Checkout Button */}
-              <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-black text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg flex items-center justify-center gap-2">
-                <span>Proceed to Checkout</span>
+              <button 
+                onClick={handlePlaceOrder}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-black text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
+              >
+                <span>Place Order</span>
                 <ChevronRight size={24} />
               </button>
 
