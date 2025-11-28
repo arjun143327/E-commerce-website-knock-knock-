@@ -1,9 +1,40 @@
 import React from 'react';
 import { X, Truck, Tag, ChevronRight, Package, Shield, BadgeCheck } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { orderChannel } from "../../utils/orderChannel"; // ✅ You already have this
 
 export const CartScreen = ({ cart, onUpdateQuantity, cartTotal, cartMRP, cartSavings, cartCount, onPlaceOrder }) => {
   const { setCurrentScreen, userLocation } = useApp();
+
+  // 🔥 NEW FUNCTION - Handle Place Order with Channel
+  const handlePlaceOrder = () => {
+    if (cart.length === 0) return;
+
+    // Create order object
+    const newOrder = {
+      id: Math.floor(1000 + Math.random() * 9000),
+      customer: "Rajesh Kumar", // You can get from context if you have user name
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        qty: item.cartQuantity
+      })),
+      total: cartTotal,
+      status: 'pending',
+      time: new Date(),
+      address: userLocation || "12, Gandhi Road, Avadi, Chennai",
+      payment: "UPI"
+    };
+
+    // 🚀 SEND TO RETAILER APP
+    console.log('🛒 Customer placing order:', newOrder);
+    orderChannel.sendNewOrder(newOrder);
+
+    // Call your existing onPlaceOrder function
+    onPlaceOrder();
+  };
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
@@ -150,9 +181,9 @@ export const CartScreen = ({ cart, onUpdateQuantity, cartTotal, cartMRP, cartSav
               )}
             </div>
 
-            {/* Checkout Button */}
+            {/* Checkout Button - UPDATED TO USE handlePlaceOrder */}
             <button 
-              onClick={onPlaceOrder}
+              onClick={handlePlaceOrder}
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-black text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg flex items-center justify-center gap-2"
             >
               <span>Place Order</span>

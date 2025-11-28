@@ -12,11 +12,6 @@ import { CartScreen } from './components/screens/CartScreen';
 import { OrderSuccessScreen } from './components/screens/OrderSuccessScreen';
 import { OrdersHistoryScreen } from './components/screens/OrdersHistoryScreen';
 
-// NEW SCREENS IMPORT
-import { LocationMapScreen } from './components/screens/LocationMapScreen';
-import { PaymentScreen } from './components/screens/PaymentScreen';
-import { ProfileScreen } from './components/screens/ProfileScreen';
-
 function AppContent() {
   const { currentScreen, setCurrentScreen, userLocation } = useApp();
   
@@ -37,9 +32,10 @@ function AppContent() {
     setCurrentOrder, 
     createOrder 
   } = useOrders();
+  
+  const { setCurrentScreen, userLocation } = useApp();
 
-  // Logic to handle payment completion
-  const handlePaymentComplete = () => {
+  const handlePlaceOrder = () => {
     const order = createOrder(cart, cartTotal, cartSavings, userLocation);
     clearCart();
     setCurrentScreen('orderSuccess');
