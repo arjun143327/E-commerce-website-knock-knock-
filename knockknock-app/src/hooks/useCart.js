@@ -17,6 +17,7 @@ export const useCart = () => {
   };
 
   const removeFromCart = (productId) => {
+    
     setCart(cart.filter(item => item.id !== productId));
   };
 

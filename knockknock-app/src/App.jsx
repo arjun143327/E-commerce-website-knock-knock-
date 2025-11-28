@@ -12,8 +12,14 @@ import { CartScreen } from './components/screens/CartScreen';
 import { OrderSuccessScreen } from './components/screens/OrderSuccessScreen';
 import { OrdersHistoryScreen } from './components/screens/OrdersHistoryScreen';
 
+// NEW SCREENS IMPORT
+import { LocationMapScreen } from './components/screens/LocationMapScreen';
+import { PaymentScreen } from './components/screens/PaymentScreen';
+import { ProfileScreen } from './components/screens/ProfileScreen';
+
 function AppContent() {
-  const { currentScreen } = useApp();
+  const { currentScreen, setCurrentScreen, userLocation } = useApp();
+  
   const { 
     cart, 
     addToCart, 
@@ -31,10 +37,9 @@ function AppContent() {
     setCurrentOrder, 
     createOrder 
   } = useOrders();
-  
-  const { setCurrentScreen, userLocation } = useApp();
 
-  const handlePlaceOrder = () => {
+  // Logic to handle payment completion
+  const handlePaymentComplete = () => {
     const order = createOrder(cart, cartTotal, cartSavings, userLocation);
     clearCart();
     setCurrentScreen('orderSuccess');
@@ -76,10 +81,25 @@ function AppContent() {
             cartMRP={cartMRP}
             cartSavings={cartSavings}
             cartCount={cartCount}
-            onPlaceOrder={handlePlaceOrder}
+            // MODIFIED: Navigate to Payment instead of placing order immediately
+            onPlaceOrder={() => setCurrentScreen('payment')} 
           />
         );
-      
+
+      // NEW ROUTE: PAYMENT
+      case 'payment':
+        return (
+          <PaymentScreen 
+            cartTotal={cartTotal}
+            cartSavings={cartSavings}
+            onPaymentComplete={handlePaymentComplete}
+          />
+        );
+
+      // NEW ROUTE: LOCATION MAP
+      case 'locationMap':
+        return <LocationMapScreen />;
+
       case 'orderSuccess':
         return <OrderSuccessScreen order={currentOrder} />;
       
@@ -92,19 +112,13 @@ function AppContent() {
           />
         );
       
+      // NEW ROUTE: PROFILE
       case 'profile':
         return (
-          <div className="h-screen bg-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-3xl font-black mb-4">Profile Coming Soon!</h1>
-              <button 
-                onClick={() => setCurrentScreen('home')}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-bold"
-              >
-                Go Home
-              </button>
-            </div>
-          </div>
+          <ProfileScreen 
+            cartCount={cartCount} 
+            ordersCount={orders.length} 
+          />
         );
       
       default:
@@ -112,7 +126,7 @@ function AppContent() {
     }
   };
 
-  return <div className="app">{renderScreen()}</div>;
+  return <div className="app font-sans text-gray-900">{renderScreen()}</div>;
 }
 
 function App() {
