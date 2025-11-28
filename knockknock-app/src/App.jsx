@@ -11,6 +11,7 @@ import { HomeScreen } from './components/screens/HomeScreen';
 import { CartScreen } from './components/screens/CartScreen';
 import { OrderSuccessScreen } from './components/screens/OrderSuccessScreen';
 import { OrdersHistoryScreen } from './components/screens/OrdersHistoryScreen';
+import { orderChannel } from "./utils/orderChannel";
 
 function AppContent() {
   const { currentScreen } = useApp();
@@ -34,11 +35,25 @@ function AppContent() {
   
   const { setCurrentScreen, userLocation } = useApp();
 
-  const handlePlaceOrder = () => {
-    const order = createOrder(cart, cartTotal, cartSavings, userLocation);
-    clearCart();
-    setCurrentScreen('orderSuccess');
-  };
+  // Inside handlePlaceOrder:
+const handlePlaceOrder = () => {
+  const order = createOrder(cart, cartTotal, cartSavings, userLocation);
+  
+  // Send to retailer
+  orderChannel.sendOrder({
+    id: order.id,
+    customer: "Customer", 
+    items: order.items,
+    total: order.total,
+    status: 'pending',
+    time: new Date(),
+    address: userLocation,
+    payment: "UPI"
+  });
+  
+  clearCart();
+  setCurrentScreen('orderSuccess');
+};
 
   const handleViewOrder = (order) => {
     setCurrentOrder(order);
