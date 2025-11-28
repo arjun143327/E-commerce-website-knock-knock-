@@ -5,6 +5,8 @@ import {
     XCircle, Clock, ChevronRight, 
     LogOut, TrendingUp, Zap, MapPin
 } from 'lucide-react';
+import { useEffect } from 'react';
+import { orderChannel } from './orderChannel';
 
 // --- MOCK DATA ---
 const MOCK_PRODUCTS = [
@@ -17,7 +19,7 @@ const MOCK_PRODUCTS = [
 // --- SUB-COMPONENTS ---
 
 const RevenueChart = () => {
-    const data = [40, 65, 45, 80, 55, 90, 70]; // Mock weekly data
+    const data = [40, 65, 45, 80, 55, 90, 70];
     const max = Math.max(...data);
     
     return (
@@ -29,7 +31,6 @@ const RevenueChart = () => {
                             className="w-full max-w-[20px] bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-lg transition-all duration-500 group-hover:opacity-80"
                             style={{ height: `${(val / max) * 100}%` }}
                         ></div>
-                        {/* Tooltip */}
                         <div className="absolute -top-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                             ₹{val}k
                         </div>
@@ -136,11 +137,45 @@ export default function App() {
     const [notification, setNotification] = useState(null);
     const [isStoreOpen, setIsStoreOpen] = useState(true);
 
-    // --- Logic ---
-
+    // 🔥 CALCULATE ACTIVE AND COMPLETED ORDERS
     const activeOrders = orders.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
     const completedOrders = orders.filter(o => ['completed', 'rejected'].includes(o.status));
 
+    // 🔥 LISTEN FOR INCOMING ORDERS FROM CUSTOMER APP
+    useEffect(() => {
+        console.log('🎧 Retailer app listening for orders...');
+        
+        const listener = orderChannel.onMessage((message) => {
+            console.log('📩 Retailer received:', message);
+            
+            if (message.type === 'NEW_ORDER') {
+                const newOrder = message.payload;
+                
+                // Add to orders
+                setOrders(prev => [newOrder, ...prev]);
+                
+                // Show notification
+                setNotification(newOrder);
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => setNotification(null), 5000);
+            }
+            
+            if (message.type === 'ORDER_STATUS_UPDATE') {
+                const { orderId, status } = message.payload;
+                setOrders(prev => prev.map(o => 
+                    o.id === orderId ? { ...o, status } : o
+                ));
+            }
+        });
+
+        return () => {
+            console.log('🔇 Cleaning up listener');
+            orderChannel.removeListener(listener);
+        };
+    }, []);
+
+    // 🔥 SIMULATE INCOMING ORDER (FOR DEMO BUTTON)
     const simulateIncomingOrder = () => {
         const randomItem = inventory[Math.floor(Math.random() * inventory.length)];
         const newOrder = {
@@ -157,28 +192,25 @@ export default function App() {
             payment: "UPI"
         };
 
-        // Add to state
         setOrders(prev => [newOrder, ...prev]);
-        
-        // Show notification
         setNotification(newOrder);
-        
-        // Auto hide notification
         setTimeout(() => setNotification(null), 4000);
     };
 
+    // 🔥 UPDATE ORDER STATUS
     const updateOrderStatus = (orderId, newStatus) => {
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        orderChannel.updateOrderStatus(orderId, newStatus);
     };
 
+    // 🔥 TOGGLE STOCK
     const toggleStock = (productId) => {
         setInventory(inventory.map(p => 
             p.id === productId ? { ...p, inStock: !p.inStock } : p
         ));
     };
 
-    // --- Render Helpers ---
-
+    // 🔥 RENDER STATUS BADGE
     const renderStatusBadge = (status) => {
         const styles = {
             pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -199,11 +231,11 @@ export default function App() {
     return (
         <div className="flex flex-col h-screen bg-gray-50 max-w-md mx-auto shadow-2xl overflow-hidden relative border-x border-gray-200">
             
-            {/* --- HEADER --- */}
+            {/* HEADER */}
             <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10 sticky top-0">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xl shadow-md">
-                        🔌
+                        🏪
                     </div>
                     <div>
                         <h2 className="font-bold text-gray-800 leading-tight">Tech Galaxy</h2>
@@ -215,7 +247,6 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    {/* DEMO BUTTON */}
                     <button 
                         onClick={simulateIncomingOrder}
                         className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1"
@@ -231,16 +262,15 @@ export default function App() {
                 </div>
             </header>
 
-            {/* --- NOTIFICATION POPUP --- */}
+            {/* NOTIFICATION */}
             <NotificationToast notification={notification} onClose={() => setNotification(null)} />
 
-            {/* --- MAIN CONTENT AREA --- */}
+            {/* MAIN CONTENT */}
             <main className="flex-1 overflow-y-auto pb-20 scroll-smooth">
                 
                 {/* DASHBOARD TAB */}
                 {activeTab === 'dashboard' && (
-                    <div className="p-4 space-y-6 animate-slide-in">
-                        {/* Welcome */}
+                    <div className="p-4 space-y-6">
                         <div className="flex justify-between items-end">
                             <div>
                                 <p className="text-gray-500 text-sm">Good Evening,</p>
@@ -252,7 +282,6 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Quick Stats */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                                 <div className="flex items-center gap-2 mb-2 text-purple-600">
@@ -274,7 +303,6 @@ export default function App() {
                             </div>
                         </div>
 
-                        {/* Chart Section */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="font-bold text-gray-800">Weekly Performance</h3>
@@ -286,7 +314,6 @@ export default function App() {
                             <RevenueChart />
                         </div>
 
-                        {/* Recent Activity */}
                         <div>
                             <h3 className="font-bold text-gray-800 mb-3">Live Feed</h3>
                             <div className="space-y-3">
@@ -309,7 +336,7 @@ export default function App() {
 
                 {/* ORDERS TAB */}
                 {activeTab === 'orders' && (
-                    <div className="p-4 space-y-4 animate-slide-in">
+                    <div className="p-4 space-y-4">
                         <div className="flex items-center justify-between mb-2">
                             <h2 className="text-xl font-bold text-gray-800">Active Orders</h2>
                             <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold">{activeOrders.length} Pending</span>
@@ -319,13 +346,12 @@ export default function App() {
                             <div className="text-center py-20 opacity-50">
                                 <div className="text-6xl mb-4">💤</div>
                                 <p className="font-medium text-gray-600">No active orders</p>
-                                <p className="text-xs text-gray-400 mt-2">Waiting for the magic notification...</p>
-                                <button onClick={simulateIncomingOrder} className="mt-6 text-indigo-500 underline text-sm">Tap to simulate an order</button>
+                                <p className="text-xs text-gray-400 mt-2">Waiting for orders from customers...</p>
+                                <button onClick={simulateIncomingOrder} className="mt-6 text-indigo-500 underline text-sm">Click to simulate an order</button>
                             </div>
                         ) : (
                             activeOrders.map(order => (
                                 <div key={order.id} className="bg-white rounded-2xl shadow-md border-l-4 border-l-purple-500 overflow-hidden">
-                                    {/* Order Header */}
                                     <div className="p-4 border-b border-gray-50 flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
@@ -339,12 +365,11 @@ export default function App() {
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-xl text-gray-800">₹{order.total}</p>
+                                            <p className="font-bold text-xl text-gray-800">₹{order.total.toLocaleString()}</p>
                                             <p className="text-xs text-gray-400">Total Bill</p>
                                         </div>
                                     </div>
 
-                                    {/* Order Items */}
                                     <div className="bg-gray-50 p-4">
                                         <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Items to Pack</p>
                                         <ul className="space-y-2">
@@ -354,18 +379,16 @@ export default function App() {
                                                         <span className="w-5 h-5 bg-white rounded flex items-center justify-center text-xs border">{item.image}</span>
                                                         {item.qty}x {item.name}
                                                     </span>
-                                                    <span className="text-gray-500">₹{item.price}</span>
+                                                    <span className="text-gray-500">₹{item.price.toLocaleString()}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
 
-                                    {/* Address (Simplified) */}
                                     <div className="px-4 py-2 bg-white flex items-center gap-2 text-xs text-gray-500 border-t border-gray-50">
                                         <MapPin size={12} /> {order.address}
                                     </div>
 
-                                    {/* Actions */}
                                     <div className="p-4 pt-2 flex gap-3">
                                         {order.status === 'pending' && (
                                             <>
@@ -401,16 +424,15 @@ export default function App() {
                             ))
                         )}
 
-                        {/* History Section Preview */}
                         <div className="mt-8 pt-4 border-t border-gray-200">
                             <h3 className="font-bold text-gray-500 mb-4">Past Orders</h3>
                             {completedOrders.length > 0 ? (
-                                    completedOrders.map(order => (
+                                completedOrders.map(order => (
                                     <div key={order.id} className="flex items-center justify-between p-3 bg-white mb-2 rounded-lg opacity-60">
                                         <span className="font-bold text-gray-600">#{order.id}</span>
                                         <span className="text-xs bg-gray-200 px-2 py-1 rounded">{order.status}</span>
                                     </div>
-                                    ))
+                                ))
                             ) : (
                                 <p className="text-sm text-gray-400">No history yet.</p>
                             )}
@@ -420,7 +442,7 @@ export default function App() {
 
                 {/* INVENTORY TAB */}
                 {activeTab === 'inventory' && (
-                    <div className="p-4 animate-slide-in">
+                    <div className="p-4">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">Manage Inventory</h2>
                         <div className="space-y-4">
                             {inventory.map(product => (
@@ -431,12 +453,12 @@ export default function App() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-gray-800 text-sm">{product.name}</h3>
-                                            <p className="text-xs text-gray-500">MRP: ₹{product.mrp}</p>
+                                            <p className="text-xs text-gray-500">MRP: ₹{product.mrp.toLocaleString()}</p>
                                         </div>
                                     </div>
                                     
                                     <div className="flex flex-col items-end gap-2">
-                                        <div className="text-sm font-bold text-purple-600">₹{product.price}</div>
+                                        <div className="text-sm font-bold text-purple-600">₹{product.price.toLocaleString()}</div>
                                         <label className="relative inline-flex items-center cursor-pointer">
                                             <input 
                                                 type="checkbox" 
@@ -469,7 +491,7 @@ export default function App() {
 
             </main>
 
-            {/* --- BOTTOM NAVIGATION --- */}
+            {/* BOTTOM NAVIGATION */}
             <nav className="bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-20 absolute bottom-0 w-full">
                 <button 
                     onClick={() => setActiveTab('dashboard')}
@@ -483,7 +505,6 @@ export default function App() {
                     onClick={() => setActiveTab('orders')}
                     className={`flex flex-col items-center gap-1 transition-colors relative ${activeTab === 'orders' ? 'text-purple-600' : 'text-gray-400'}`}
                 >
-                    {/* Order Badge */}
                     {activeOrders.length > 0 && (
                         <span className="absolute -top-1 right-2 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full animate-bounce">
                             {activeOrders.length}
