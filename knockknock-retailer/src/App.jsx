@@ -128,42 +128,46 @@ const LoginScreen = ({ onLogin }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center p-6">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 w-full max-w-md p-8 rounded-3xl shadow-2xl">
+        <div className="min-h-screen bg-gradient-light flex items-center justify-center p-6 relative overflow-hidden">
+            {/* Decorative blurry background circles for login */}
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-subtle"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-subtle" style={{animationDelay: '1s'}}></div>
+            
+            <div className="glass-card w-full max-w-md p-8 rounded-3xl z-10 animate-slide-in">
                 <div className="text-center mb-8">
-                    <div className="bg-white/20 w-20 h-20 rounded-2xl mx-auto flex items-center justify-center mb-4 text-4xl shadow-lg">
-                        🏪
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-500 w-20 h-20 rounded-2xl mx-auto flex items-center justify-center mb-4 text-4xl shadow-lg animate-float">
+                        <Store className="text-white" size={32} />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Partner Login</h1>
-                    <p className="text-blue-200">Manage your store on Knock Knock</p>
+                    <h1 className="text-3xl font-black text-gray-800 mb-2">ASHY Partner</h1>
+                    <p className="text-gray-500 font-medium">Manage your store effortlessly</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label className="text-white/80 text-sm ml-1 mb-1 block">Admin Email</label>
+                        <label className="text-gray-600 font-bold uppercase tracking-wider text-xs ml-1 mb-1 block">Admin Email</label>
                         <input 
                             type="email" 
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@knockknock.com"
-                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            placeholder="admin@ashy.com"
+                            className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner transition-all"
                         />
                     </div>
                     <div>
-                        <label className="text-white/80 text-sm ml-1 mb-1 block">Password</label>
+                        <label className="text-gray-600 font-bold uppercase tracking-wider text-xs ml-1 mb-1 block">Password</label>
                         <input 
                             type="password" 
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter password"
-                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            className="w-full bg-white/60 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner transition-all"
                         />
                     </div>
                     {error && <p className="text-red-300 text-sm text-center">{error}</p>}
                     <button 
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transform transition-all active:scale-[0.98] flex justify-center items-center gap-2 mt-6"
                     >
                         {loading ? (
                             <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
@@ -173,9 +177,9 @@ const LoginScreen = ({ onLogin }) => {
                     </button>
                 </form>
                 
-                <div className="mt-8 text-center text-white/50 text-xs">
-                    <p>Hyperlocal Delivery Partner App v1.0</p>
-                    <p>Avadi, Chennai</p>
+                <div className="mt-8 text-center text-gray-400 text-xs">
+                    <p>Hyperlocal Delivery Partner App v2.0</p>
+                    <p className="font-mono mt-1 bg-white/50 inline-block px-2 py-1 rounded">admin@ashy.com / admin123</p>
                 </div>
             </div>
         </div>
@@ -376,26 +380,35 @@ export default function App() {
     if (!user) return <LoginScreen onLogin={handleLoginSuccess} />;
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 max-w-md mx-auto shadow-2xl overflow-hidden relative border-x border-gray-200">
+        <div className="flex flex-col h-screen bg-gradient-light font-sans max-w-md mx-auto shadow-2xl overflow-hidden relative border-x border-gray-200">
             
             {/* HEADER */}
-            <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10 sticky top-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xl shadow-md">
-                        🏪
+            <header className="glass-header px-4 py-3 flex items-center justify-between z-10 sticky top-0">
+                <div className="flex items-center gap-3 animate-slide-in">
+                    <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-md shadow-indigo-200 animate-float">
+                        ⚡
                     </div>
                     <div>
-                        <h2 className="font-bold text-gray-800 leading-tight">Tech Galaxy</h2>
+                        <h2 className="font-black text-gray-800 leading-tight">ASHY Partner</h2>
                         <div className="flex items-center gap-1">
-                            <span className={`w-2 h-2 rounded-full ${isStoreOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-                            <span className="text-xs text-gray-500">{isStoreOpen ? 'Online' : 'Closed'}</span>
+                            <span className={`w-2 h-2 rounded-full ${isStoreOpen ? 'bg-emerald-500 animate-pulse-subtle' : 'bg-red-500'}`}></span>
+                            <span className="text-xs text-gray-500 font-semibold tracking-wide uppercase">{isStoreOpen ? 'Online' : 'Closed'}</span>
                         </div>
                     </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    <button className="p-2 text-gray-400 hover:text-gray-600">
+                    <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors bg-white/50 rounded-full hover:bg-white">
                         <Settings size={20} />
+                    </button>
+                    <button 
+                        onClick={() => {
+                            localStorage.removeItem('knockknock_token');
+                            window.location.reload();
+                        }}
+                        className="p-2 text-red-400 hover:text-red-600 transition-colors bg-white/50 rounded-full hover:bg-red-50"
+                    >
+                        <LogOut size={20} />
                     </button>
                 </div>
             </header>
@@ -423,30 +436,30 @@ export default function App() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                                <div className="flex items-center gap-2 mb-2 text-purple-600">
-                                    <ShoppingBag size={20} />
-                                    <span className="text-sm font-semibold">Orders</span>
+                            <div className="glass-card bg-white/60 p-4 rounded-3xl shadow-glass border border-white/80 group">
+                                <div className="flex items-center gap-2 mb-2 text-indigo-600">
+                                    <ShoppingBag size={20} className="group-hover:scale-110 transition-transform" />
+                                    <span className="text-sm font-bold uppercase tracking-wider">Orders</span>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-800">{activeOrders.length}</p>
-                                <p className="text-xs text-green-500 flex items-center gap-1">
+                                <p className="text-3xl font-black text-gray-800">{activeOrders.length}</p>
+                                <p className="text-xs text-emerald-500 font-bold flex items-center gap-1 mt-1">
                                     <TrendingUp size={12} /> +15% vs yest.
                                 </p>
                             </div>
-                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                                <div className="flex items-center gap-2 mb-2 text-blue-600">
-                                    <Clock size={20} />
-                                    <span className="text-sm font-semibold">Avg Time</span>
+                            <div className="glass-card bg-white/60 p-4 rounded-3xl shadow-glass border border-white/80 group">
+                                <div className="flex items-center gap-2 mb-2 text-indigo-600">
+                                    <Clock size={20} className="group-hover:scale-110 transition-transform" />
+                                    <span className="text-sm font-bold uppercase tracking-wider">Avg Time</span>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-800">12m</p>
-                                <p className="text-xs text-green-500">On Target</p>
+                                <p className="text-3xl font-black text-gray-800">12m</p>
+                                <p className="text-xs text-emerald-500 font-bold mt-1">On Target</p>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-bold text-gray-800">Weekly Performance</h3>
-                                <select className="text-xs bg-gray-100 rounded px-2 py-1 border-none outline-none text-gray-600">
+                        <div className="glass-card bg-white/60 rounded-3xl shadow-glass border border-white/80 p-5">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">Weekly Performance</h3>
+                                <select className="text-xs bg-indigo-50/50 rounded-xl px-2 py-1.5 border border-indigo-100 outline-none text-indigo-700 font-bold cursor-pointer hover:bg-indigo-50 transition-colors">
                                     <option>Revenue</option>
                                     <option>Orders</option>
                                 </select>
@@ -455,18 +468,18 @@ export default function App() {
                         </div>
 
                         <div>
-                            <h3 className="font-bold text-gray-800 mb-3">Live Feed</h3>
+                            <h3 className="font-bold text-gray-800 mb-3 uppercase tracking-wider text-sm">Live Feed</h3>
                             <div className="space-y-3">
                                 {[1,2,3].map((_, i) => (
-                                    <div key={i} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-gray-50">
-                                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <div key={i} className="flex items-center gap-3 bg-white/70 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-white">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-inner">
                                             <CheckCircle size={18} />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-800">Order #{2024 - i} Delivered</p>
-                                            <p className="text-xs text-gray-500">{i * 15 + 5} mins ago</p>
+                                            <p className="text-sm font-bold text-gray-800">Order #{2024 - i} Delivered</p>
+                                            <p className="text-xs font-semibold text-gray-500">{i * 15 + 5} mins ago</p>
                                         </div>
-                                        <span className="text-sm font-bold text-gray-700">₹899</span>
+                                        <span className="text-sm font-black text-gray-700">₹899</span>
                                     </div>
                                 ))}
                             </div>
@@ -490,56 +503,65 @@ export default function App() {
                             </div>
                         ) : (
                             activeOrders.map(order => (
-                                <div key={order.id} className="bg-white rounded-2xl shadow-md border-l-4 border-l-purple-500 overflow-hidden">
-                                    <div className="p-4 border-b border-gray-50 flex justify-between items-start">
+                                <div key={order.id} className={`glass-card rounded-3xl shadow-glass overflow-hidden animate-slide-in relative border ${
+                                    order.status === 'pending' ? 'border-orange-200/50 bg-white/70' : 
+                                    order.status === 'preparing' ? 'border-indigo-200/50 bg-white/70' : 
+                                    'border-emerald-200/50 bg-white/70'
+                                }`}>
+                                    {order.status === 'pending' && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 to-red-400"></div>}
+                                    {order.status === 'preparing' && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-400 to-purple-400"></div>}
+                                    
+                                    <div className="p-5 border-b border-gray-100/50 flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h3 className="font-bold text-lg text-gray-800">#{order.id}</h3>
+                                                <h3 className="font-black text-lg text-gray-800">#{order.id}</h3>
                                                 {renderStatusBadge(order.status)}
                                             </div>
-                                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                                            <p className="text-xs font-semibold text-gray-500 flex items-center gap-1 uppercase tracking-wide">
                                                 <Clock size={12} /> {order.time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                 <span className="mx-1">•</span>
-                                                <span className="text-green-600 font-medium">{order.payment}</span>
+                                                <span className="text-indigo-600 font-bold">{order.payment}</span>
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-xl text-gray-800">₹{order.total.toLocaleString()}</p>
-                                            <p className="text-xs text-gray-400">Total Bill</p>
+                                            <p className="font-black text-xl text-gray-800">₹{order.total.toLocaleString()}</p>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Bill</p>
                                         </div>
                                     </div>
 
-                                    <div className="bg-gray-50 p-4">
-                                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Items to Pack</p>
-                                        <ul className="space-y-2">
+                                    <div className="bg-white/40 p-5">
+                                        <p className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                            <Package size={14} /> Items to Pack
+                                        </p>
+                                        <ul className="space-y-3">
                                             {order.items.map((item, idx) => (
-                                                <li key={idx} className="flex justify-between text-sm text-gray-700">
-                                                    <span className="flex items-center gap-2">
-                                                        <span className="w-5 h-5 bg-white rounded flex items-center justify-center text-xs border">{item.image}</span>
-                                                        {item.qty}x {item.name}
+                                                <li key={idx} className="flex justify-between text-sm text-gray-800 items-center bg-white/60 p-2 rounded-xl shadow-sm border border-white">
+                                                    <span className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center text-sm shadow-inner">{item.image}</span>
+                                                        <span className="font-bold">{item.qty}x</span> <span className="font-medium">{item.name}</span>
                                                     </span>
-                                                    <span className="text-gray-500">₹{item.price.toLocaleString()}</span>
+                                                    <span className="font-bold text-indigo-600">₹{(item.price * item.qty).toLocaleString()}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
 
-                                    <div className="px-4 py-2 bg-white flex items-center gap-2 text-xs text-gray-500 border-t border-gray-50">
-                                        <MapPin size={12} /> {order.address}
+                                    <div className="px-5 py-3 bg-white/30 flex items-center gap-2 text-xs font-semibold text-gray-600 border-t border-gray-100/50">
+                                        <MapPin size={14} className="text-indigo-500" /> {order.address}
                                     </div>
 
-                                    <div className="p-4 pt-2 flex gap-3">
+                                    <div className="p-5 flex gap-3">
                                         {order.status === 'pending' && (
                                             <>
                                                 <button 
                                                     onClick={() => updateOrderStatus(order.id, 'rejected')}
-                                                    className="flex-1 py-3 border border-red-200 text-red-500 rounded-xl font-semibold hover:bg-red-50 transition-colors"
+                                                    className="flex-1 py-3 bg-white border border-red-200 text-red-500 rounded-2xl font-bold shadow-sm hover:bg-red-50 transition-colors active:scale-95"
                                                 >
                                                     Reject
                                                 </button>
                                                 <button 
                                                     onClick={() => updateOrderStatus(order.id, 'preparing')}
-                                                    className="flex-[2] py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+                                                    className="flex-[2] py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-md hover:bg-indigo-700 transition-all active:scale-95 shadow-indigo-200"
                                                 >
                                                     Accept Order
                                                 </button>
@@ -548,13 +570,13 @@ export default function App() {
                                         {order.status === 'preparing' && (
                                             <button 
                                                 onClick={() => updateOrderStatus(order.id, 'ready')}
-                                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                                                className="w-full py-3 bg-emerald-500 text-white rounded-2xl font-bold shadow-md hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-emerald-200"
                                             >
                                                 <Package size={20} /> Mark Ready for Pickup
                                             </button>
                                         )}
                                         {order.status === 'ready' && (
-                                            <div className="w-full text-center py-2 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-200 animate-pulse">
+                                            <div className="w-full text-center py-3 bg-yellow-50 text-yellow-700 rounded-2xl border border-yellow-200 font-bold text-sm shadow-sm animate-pulse-subtle">
                                                 Waiting for Delivery Partner...
                                             </div>
                                         )}

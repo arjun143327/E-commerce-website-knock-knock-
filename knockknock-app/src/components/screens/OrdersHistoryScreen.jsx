@@ -27,7 +27,7 @@ export const OrdersHistoryScreen = ({ orders, cartCount, onViewOrder }) => {
   }, []);
 
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to cancel this order? Your KnockKnock wallet will be refunded immediately.')) return;
+    if (!window.confirm('Are you sure you want to cancel this order? Your ASHY wallet will be refunded immediately.')) return;
     try {
       await cancelOrder(orderId);
       // Update locally

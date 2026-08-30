@@ -43,13 +43,13 @@ export const ProductDetailsModal = ({ product, isOpen, onClose, onAddToCart }) =
   if (!isOpen || !product) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-end sm:items-center">
-      <div className="bg-white w-full sm:w-[500px] h-[85vh] sm:h-[80vh] sm:rounded-2xl rounded-t-3xl flex flex-col relative animate-slide-up">
+    <div onClick={(e) => e.stopPropagation()} className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex justify-center items-end sm:items-center">
+      <div className="bg-white/90 backdrop-blur-xl border border-white/60 shadow-glass w-full sm:w-[500px] h-[85vh] sm:h-[80vh] sm:rounded-3xl rounded-t-3xl flex flex-col relative animate-slide-up overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="font-bold text-lg truncate pr-4">{product.name}</h2>
-          <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
-            <X size={20} />
+        <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-white/50">
+          <h2 className="font-black text-lg truncate pr-4 text-gray-800">{product.name}</h2>
+          <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+            <X size={20} className="text-gray-600" />
           </button>
         </div>
 
@@ -57,7 +57,7 @@ export const ProductDetailsModal = ({ product, isOpen, onClose, onAddToCart }) =
         <div className="flex-1 overflow-auto p-4 space-y-6">
           {/* Product Image & Info */}
           <div className="flex gap-4">
-            <div className="w-32 h-32 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center text-6xl">
+            <div className="w-32 h-32 bg-gradient-light rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-6xl shadow-inner">
               {product.image?.startsWith('/') ? (
                 <img src={`http://localhost:3001${product.image}`} alt={product.name} className="w-full h-full object-cover" />
               ) : (
@@ -99,13 +99,13 @@ export const ProductDetailsModal = ({ product, isOpen, onClose, onAddToCart }) =
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="What did you like or dislike?"
-                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none h-24 resize-none"
+                className="w-full border-gray-200 bg-white/60 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 outline-none h-24 resize-none transition-all shadow-sm"
                 required
               />
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 disabled:opacity-50"
+                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 shadow-md active:scale-[0.98] transition-transform"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Review'}
               </button>
@@ -139,13 +139,13 @@ export const ProductDetailsModal = ({ product, isOpen, onClose, onAddToCart }) =
         </div>
 
         {/* Footer Add To Cart */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100">
           <button 
             onClick={() => {
               onAddToCart(product);
               onClose();
             }}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:from-purple-700 hover:to-blue-700 transition"
+            className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all active:scale-[0.98]"
           >
             Add to Cart
           </button>

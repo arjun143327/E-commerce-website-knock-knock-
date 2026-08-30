@@ -34,7 +34,7 @@ export const SignupScreen = () => {
         <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <div className="text-6xl mb-4">🚪</div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">Join Knock Knock</h1>
+            <h1 className="text-3xl font-black text-gray-900 mb-2">Join ASHY</h1>
             <p className="text-gray-600">Get your first order at 50% OFF!</p>
           </div>
           

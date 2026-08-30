@@ -21,7 +21,7 @@ export const PaymentScreen = ({ cartTotal, cartSavings, onPaymentComplete }) => 
   };
 
   const methods = [
-    { id: 'wallet', icon: Wallet, label: 'KnockKnock Wallet', sub: `Balance: ₹${user?.walletBalance || 0}` },
+    { id: 'wallet', icon: Wallet, label: 'ASHY Wallet', sub: `Balance: ₹${user?.walletBalance || 0}` },
     { id: 'upi', icon: Banknote, label: 'UPI (GPay, PhonePe)', sub: 'Fastest' },
     { id: 'card', icon: CreditCard, label: 'Credit / Debit Card', sub: 'Secure' },
     { id: 'cod', icon: Banknote, label: 'Cash on Delivery', sub: 'Pay at door' },

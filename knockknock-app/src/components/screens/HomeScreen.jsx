@@ -16,7 +16,7 @@ export const HomeScreen = ({ cart, onAddToCart, onUpdateQuantity, ordersCount })
   const { products: filteredProducts, loading } = useProducts();
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col font-sans">
       <Header />
       <CategoryPills />
 
@@ -26,15 +26,16 @@ export const HomeScreen = ({ cart, onAddToCart, onUpdateQuantity, ordersCount })
         {!selectedStore && (
           <div className="p-4 space-y-3">
             <div className="flex items-center gap-2 mb-2">
-              <Zap className="text-orange-500" size={20} />
-              <h2 className="font-black text-lg">Today's Offers</h2>
+              <Zap className="text-indigo-500 animate-pulse-subtle" size={20} />
+              <h2 className="font-black text-lg text-gray-800 tracking-tight">Flash Offers</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {OFFERS.map((offer, idx) => (
-                <div key={idx} className={`bg-gradient-to-br ${offer.color} rounded-2xl p-4 text-white shadow-lg`}>
-                  <div className="text-xs font-semibold opacity-90">{offer.title}</div>
-                  <div className="text-2xl font-black my-1">{offer.discount}</div>
-                  <div className="text-xs opacity-90">{offer.subtitle}</div>
+                <div key={idx} className={`bg-gradient-to-br ${offer.color.replace('orange', 'indigo').replace('blue', 'cyan').replace('green', 'emerald')} rounded-2xl p-4 text-white shadow-glass animate-shimmer relative overflow-hidden group`}>
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="text-xs font-bold uppercase tracking-wider opacity-90 drop-shadow-sm">{offer.title}</div>
+                  <div className="text-2xl font-black my-1 drop-shadow-md">{offer.discount}</div>
+                  <div className="text-xs opacity-90 font-medium">{offer.subtitle}</div>
                 </div>
               ))}
             </div>
@@ -46,10 +47,10 @@ export const HomeScreen = ({ cart, onAddToCart, onUpdateQuantity, ordersCount })
           <div className="px-4 pb-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Store className="text-purple-600" size={20} />
-                <h2 className="font-black text-lg">Stores Near You</h2>
+                <Store className="text-indigo-600" size={20} />
+                <h2 className="font-black text-lg text-gray-800 tracking-tight">Stores Near You</h2>
               </div>
-              <button className="text-purple-600 font-bold text-sm">View All →</button>
+              <button className="text-indigo-600 font-bold text-sm hover:opacity-80 transition-opacity">View All →</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {MOCK_STORES.map(store => (
@@ -67,15 +68,15 @@ export const HomeScreen = ({ cart, onAddToCart, onUpdateQuantity, ordersCount })
         <div className="px-4 pb-24">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <TrendingUp className="text-purple-600" size={20} />
-              <h2 className="font-black text-lg">
+              <TrendingUp className="text-indigo-600" size={20} />
+              <h2 className="font-black text-lg text-gray-800 tracking-tight">
                 {selectedStore ? `${selectedStore.name}` : 'Popular Products'}
               </h2>
             </div>
             {selectedStore && (
               <button 
                 onClick={() => setSelectedStore(null)}
-                className="text-purple-600 font-bold text-sm"
+                className="text-indigo-600 font-bold text-sm hover:opacity-80 transition-opacity bg-indigo-50 px-3 py-1 rounded-full"
               >
                 ← Back
               </button>

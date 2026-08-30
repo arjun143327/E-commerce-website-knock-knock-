@@ -8,22 +8,21 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
   const isWishlisted = wishlistIds.includes(product.id);
   const [isModalOpen, setIsModalOpen] = useState(false);
   return (
-    <>
-      <div 
-        onClick={() => setIsModalOpen(true)}
-        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden cursor-pointer"
-      >
-        <div className="p-4">
+    <div 
+      onClick={() => setIsModalOpen(true)}
+      className="glass-card rounded-3xl hover:shadow-[0_8px_32px_0_rgba(79,70,229,0.15)] transition-all duration-300 overflow-hidden cursor-pointer group"
+    >
+      <div className="p-4">
         <div className="flex gap-4">
-          <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-6xl relative group">
+          <div className="w-28 h-28 flex-shrink-0 bg-gradient-light rounded-2xl overflow-hidden flex items-center justify-center text-6xl relative">
             {product.image?.startsWith('/') ? (
-              <img src={`http://localhost:3001${product.image}`} alt={product.name} className="w-full h-full object-cover" />
+              <img src={`http://localhost:3001${product.image}`} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             ) : (
-              product.image || '📦'
+              <span className="group-hover:scale-110 transition-transform duration-500">{product.image || '📦'}</span>
             )}
             <button 
               onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
-              className="absolute top-1 right-1 p-1.5 bg-white/80 rounded-full hover:bg-white transition opacity-0 group-hover:opacity-100 lg:opacity-100"
+              className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-md rounded-full shadow-glass hover:bg-white transition-all opacity-0 group-hover:opacity-100 lg:opacity-100 z-10"
             >
               <Heart size={16} className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"} />
             </button>
@@ -31,11 +30,11 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex-1">
-                <h3 className="font-bold text-base mb-1 line-clamp-2">{product.name}</h3>
-                <p className="text-xs text-gray-500 mb-2">{product.store}</p>
+                <h3 className="font-bold text-gray-900 text-base mb-1 line-clamp-2 group-hover:text-indigo-600 transition-colors">{product.name}</h3>
+                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2">{product.store}</p>
               </div>
               {product.badge && (
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-bold whitespace-nowrap">
+                <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold whitespace-nowrap shadow-sm">
                   {product.badge}
                 </span>
               )}
@@ -53,8 +52,8 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
             {/* Price */}
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-2xl font-black text-gray-900">₹{product.price.toLocaleString()}</span>
-              <span className="text-sm text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
-              <span className="text-sm font-bold text-green-600">{product.discount}% OFF</span>
+              <span className="text-sm font-semibold text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
+              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{product.discount}% OFF</span>
             </div>
 
             {/* Stock & Action */}
@@ -104,6 +103,7 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
         onClose={() => setIsModalOpen(false)}
         onAddToCart={onAddToCart}
       />
-    </>
+    </div>
   );
 };
+

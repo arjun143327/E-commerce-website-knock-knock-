@@ -116,7 +116,7 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
               <Wallet size={24} className="text-yellow-400" />
             </div>
             <div>
-              <div className="text-xs opacity-70">Knock Knock Balance</div>
+              <div className="text-xs opacity-70">ASHY Balance</div>
               <div className="text-xl font-bold">₹{user?.walletBalance?.toLocaleString() || 0}</div>
             </div>
           </div>
@@ -291,7 +291,7 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
           </button>
         )}
         
-        <p className="text-center text-xs text-gray-400 mt-6">Version 1.0.0 • Knock Knock Retail</p>
+        <p className="text-center text-xs text-gray-400 mt-6">Version 1.0.0 • ASHY Retail</p>
       </div>
 
       <BottomNav cartCount={cartCount} ordersCount={ordersCount} />
