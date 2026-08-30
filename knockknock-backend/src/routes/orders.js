@@ -6,7 +6,8 @@ const requireAdmin = require('../middleware/requireAdmin');
 
 // Protected routes (requires login)
 router.post('/', authenticate, orderController.placeOrder);
-router.get('/', authenticate, orderController.getMyOrders);
+router.get('/', authenticate, orderController.getUserOrders);
+router.put('/:id/cancel', authenticate, orderController.cancelOrder);
 
 // Admin routes
 router.get('/all', authenticate, requireAdmin, orderController.getAllOrders);

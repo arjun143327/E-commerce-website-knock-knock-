@@ -62,21 +62,57 @@ exports.placeOrder = async (req, res) => {
   }
 };
 
-exports.getMyOrders = async (req, res) => {
+exports.getUserOrders = async (req, res) => {
   try {
     const orders = await Order.findAll({
       where: { userId: req.user.id },
+      order: [['createdAt', 'DESC']],
       include: [
         {
           model: OrderItem,
-          include: [{ model: Product, attributes: ['name', 'image', 'price'] }]
+          as: 'items',
+          include: [{ model: Product, as: 'product' }]
         }
-      ],
-      order: [['created_at', 'DESC']]
+      ]
     });
     res.json(orders);
   } catch (error) {
     console.error('Error fetching orders:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findOne({ where: { id, userId: req.user.id } });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending orders can be cancelled' });
+    }
+
+    // Process refund
+    const user = await User.findByPk(req.user.id);
+    user.walletBalance += order.total;
+    await user.save();
+
+    order.status = 'cancelled';
+    await order.save();
+
+    // Broadcast update
+    req.io.emit('orderUpdate', {
+      orderId: order.id,
+      status: order.status,
+      customerId: order.userId
+    });
+
+    res.json({ message: 'Order cancelled and refunded', order });
+  } catch (error) {
+    console.error('Error cancelling order:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

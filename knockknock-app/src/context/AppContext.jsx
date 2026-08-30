@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { getMe } from '../api/authApi';
 import { getWishlist, toggleWishlist as apiToggleWishlist } from '../api/productsApi';
+import { getCart, addToCart as apiAddToCart, updateCartQuantity as apiUpdateCartQuantity, clearCart as apiClearCart } from '../api/cartApi';
 
 const AppContext = createContext();
 
@@ -30,6 +31,7 @@ export const AppProvider = ({ children }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('');
   const [wishlistIds, setWishlistIds] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
   const [trackingOrderId, setTrackingOrderId] = useState(null);
 
   const fetchWishlist = async () => {
@@ -42,9 +44,27 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const fetchCart = async () => {
+    if (!user) {
+      setCartItems([]);
+      return;
+    }
+    try {
+      const data = await getCart();
+      const mappedCart = data.map(item => ({
+        ...item.product,
+        cartQuantity: item.quantity
+      }));
+      setCartItems(mappedCart);
+    } catch (error) {
+      console.error('Failed to fetch cart', error);
+    }
+  };
+
   React.useEffect(() => {
     if (user) {
       fetchWishlist();
+      fetchCart();
     }
   }, [user]);
 
@@ -61,6 +81,37 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const addToCart = async (product) => {
+    if (!user) {
+      alert('Please login to add items to cart');
+      return;
+    }
+    try {
+      await apiAddToCart(product.id, 1);
+      await fetchCart();
+    } catch (error) {
+      console.error('Failed to add to cart', error);
+    }
+  };
+
+  const updateQuantity = async (productId, change) => {
+    try {
+      await apiUpdateCartQuantity(productId, change);
+      await fetchCart();
+    } catch (error) {
+      console.error('Failed to update cart quantity', error);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      await apiClearCart();
+      await fetchCart();
+    } catch (error) {
+      console.error('Failed to clear cart', error);
+    }
+  };
+
   const login = (userData, token) => {
     localStorage.setItem('knockknock_token', token);
     localStorage.setItem('knockknock_user', JSON.stringify(userData));
@@ -72,6 +123,7 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem('knockknock_token');
     localStorage.removeItem('knockknock_user');
     setUser(null);
+    setCartItems([]);
     setCurrentScreen('login');
   };
 

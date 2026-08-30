@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Navigation, Search, CheckCircle2, Bike } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { getAddresses } from '../../api/addressApi';
 
 export const LocationMapScreen = () => {
   const { setCurrentScreen, setUserLocation, trackingOrderId, setTrackingOrderId } = useApp();
   const [tempLocation, setTempLocation] = useState('Avadi, Tamil Nadu');
   const [isLocating, setIsLocating] = useState(false);
   const [eta, setEta] = useState(15); // Simulated ETA in mins
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
   useEffect(() => {
     if (trackingOrderId) {
@@ -15,6 +17,9 @@ export const LocationMapScreen = () => {
         setEta(prev => prev > 1 ? prev - 1 : 1);
       }, 5000); // Reduce ETA every 5 seconds for simulation
       return () => clearInterval(interval);
+    } else {
+      // Fetch saved addresses if not tracking
+      getAddresses().then(setSavedAddresses).catch(console.error);
     }
   }, [trackingOrderId]);
 
@@ -128,16 +133,43 @@ export const LocationMapScreen = () => {
           <>
             <h2 className="text-xl font-black text-gray-900 mb-4">Select Location</h2>
             
-            {/* Search Box */}
+            {/* Search Box / Manual Entry */}
             <div className="flex items-center gap-3 bg-gray-100 p-4 rounded-xl mb-4">
               <Search className="text-gray-400" size={20} />
               <input 
                 type="text" 
                 value={tempLocation}
                 onChange={(e) => setTempLocation(e.target.value)}
+                placeholder="Or type a new address..."
                 className="bg-transparent w-full font-semibold outline-none text-gray-800"
               />
             </div>
+
+            {/* Saved Addresses List */}
+            {savedAddresses.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-bold text-gray-500 mb-2 uppercase">Saved Addresses</h3>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {savedAddresses.map(addr => (
+                    <button 
+                      key={addr.id}
+                      onClick={() => setTempLocation(addr.addressString)}
+                      className={`flex-shrink-0 p-3 rounded-xl border text-left min-w-[150px] transition ${
+                        tempLocation === addr.addressString 
+                          ? 'border-purple-500 bg-purple-50' 
+                          : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="font-bold text-gray-900 text-sm mb-1 flex justify-between items-center">
+                        {addr.title}
+                        {tempLocation === addr.addressString && <CheckCircle2 size={16} className="text-purple-600" />}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">{addr.addressString}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Use Current Location */}
             <button 

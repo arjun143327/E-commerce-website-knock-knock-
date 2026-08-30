@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { BottomNav } from '../shared/BottomNav';
 import { updateProfile } from '../../api/authApi';
 import { getWishlist } from '../../api/productsApi';
+import { getAddresses, addAddress, deleteAddress } from '../../api/addressApi';
 import { ProductCard } from '../shared/ProductCard';
 
 export const ProfileScreen = ({ cartCount, ordersCount }) => {
@@ -18,12 +19,47 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
   const [activeTab, setActiveTab] = useState('menu');
   const [wishlistItems, setWishlistItems] = useState([]);
   const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [newAddress, setNewAddress] = useState({ title: '', addressString: '' });
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'wishlist') {
       loadWishlist();
+    } else if (activeTab === 'addresses') {
+      loadAddresses();
     }
   }, [activeTab]);
+
+  const loadAddresses = async () => {
+    try {
+      const data = await getAddresses();
+      setAddresses(data);
+    } catch (error) {
+      console.error('Failed to load addresses', error);
+    }
+  };
+
+  const handleAddAddress = async (e) => {
+    e.preventDefault();
+    try {
+      await addAddress(newAddress);
+      setNewAddress({ title: '', addressString: '' });
+      setIsAddingAddress(false);
+      loadAddresses();
+    } catch (error) {
+      console.error('Failed to add address', error);
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    try {
+      await deleteAddress(id);
+      loadAddresses();
+    } catch (error) {
+      console.error('Failed to delete address', error);
+    }
+  };
 
   const loadWishlist = async () => {
     try {
@@ -120,6 +156,73 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
               </div>
             )}
           </div>
+        ) : activeTab === 'addresses' ? (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={() => setActiveTab('menu')} className="p-2 hover:bg-gray-200 rounded-full">
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className="text-xl font-bold">Saved Addresses</h2>
+            </div>
+
+            {isAddingAddress ? (
+              <form onSubmit={handleAddAddress} className="bg-white p-4 rounded-xl shadow-sm mb-4 space-y-3">
+                <input 
+                  type="text" 
+                  placeholder="e.g. Home, Office" 
+                  value={newAddress.title}
+                  onChange={e => setNewAddress({...newAddress, title: e.target.value})}
+                  className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                  required
+                />
+                <textarea 
+                  placeholder="Complete Address" 
+                  value={newAddress.addressString}
+                  onChange={e => setNewAddress({...newAddress, addressString: e.target.value})}
+                  className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none h-24 resize-none"
+                  required
+                />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setIsAddingAddress(false)} className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-200">
+                    Cancel
+                  </button>
+                  <button type="submit" className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700">
+                    Save
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button 
+                onClick={() => setIsAddingAddress(true)}
+                className="w-full bg-purple-50 text-purple-600 border border-purple-200 border-dashed py-4 rounded-xl font-bold mb-4 hover:bg-purple-100 transition"
+              >
+                + Add New Address
+              </button>
+            )}
+
+            <div className="space-y-3">
+              {addresses.map(addr => (
+                <div key={addr.id} className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                  <div>
+                    <h4 className="font-bold text-gray-900">{addr.title}</h4>
+                    <p className="text-sm text-gray-500 mt-1">{addr.addressString}</p>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteAddress(addr.id)}
+                    className="text-red-500 p-2 hover:bg-red-50 rounded-full"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              ))}
+              {addresses.length === 0 && !isAddingAddress && (
+                <div className="text-center py-10 text-gray-400">
+                  <MapPin size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No saved addresses</p>
+                </div>
+              )}
+            </div>
+          </div>
         ) : isEditing ? (
           <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 space-y-4">
             <div>
@@ -130,15 +233,6 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
                 onChange={e => setEditForm({...editForm, phone: e.target.value})}
                 className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none"
                 placeholder="Enter phone number"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-500 mb-1 block">Delivery Address</label>
-              <textarea 
-                value={editForm.address}
-                onChange={e => setEditForm({...editForm, address: e.target.value})}
-                className="w-full border rounded-xl p-3 focus:ring-2 focus:ring-purple-500 outline-none h-24 resize-none"
-                placeholder="Enter complete delivery address"
               />
             </div>
             <button 
@@ -167,6 +261,7 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
                 key={idx} 
                 onClick={() => {
                   if (item.label === 'Wishlist') setActiveTab('wishlist');
+                  if (item.label === 'Addresses') setActiveTab('addresses');
                 }}
                 className="w-full flex items-center p-4 border-b last:border-0 hover:bg-gray-50 transition"
               >
@@ -176,7 +271,7 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
                 <div className="flex-1 text-left">
                   <div className="font-bold text-gray-900">{item.label}</div>
                   <div className="text-xs text-gray-500 truncate max-w-[200px]">
-                    {item.label === 'Addresses' ? (user?.address || userLocation) : 
+                    {item.label === 'Addresses' ? (addresses.length > 0 ? `${addresses.length} saved` : userLocation) : 
                      item.label === 'Help & Support' && user?.phone ? user.phone : item.sub}
                   </div>
                 </div>

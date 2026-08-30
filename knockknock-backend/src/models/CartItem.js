@@ -3,11 +3,16 @@ const { sequelize } = require('../config/db');
 const User = require('./User');
 const Product = require('./Product');
 
-const Wishlist = sequelize.define('Wishlist', {
+const CartItem = sequelize.define('CartItem', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
+  },
+  quantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
   },
   userId: {
     type: DataTypes.INTEGER,
@@ -24,12 +29,15 @@ const Wishlist = sequelize.define('Wishlist', {
     }
   }
 }, {
-  tableName: 'wishlist',
+  tableName: 'cart_items',
   timestamps: true,
 });
 
 // Associations
-User.belongsToMany(Product, { through: Wishlist, as: 'wishlistedProducts', foreignKey: 'userId' });
-Product.belongsToMany(User, { through: Wishlist, as: 'wishlistedBy', foreignKey: 'productId' });
+User.hasMany(CartItem, { foreignKey: 'userId', as: 'cartItems' });
+CartItem.belongsTo(User, { foreignKey: 'userId' });
 
-module.exports = Wishlist;
+Product.hasMany(CartItem, { foreignKey: 'productId' });
+CartItem.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
+
+module.exports = CartItem;
