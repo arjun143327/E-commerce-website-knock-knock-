@@ -149,8 +149,24 @@ exports.addReview = async (req, res) => {
     const { rating, comment } = req.body;
     const userId = req.user.id;
     
-    // In a real app, you might verify if the user actually bought the item using Orders table.
-    // For simplicity, we just add the review.
+    const { Order, OrderItem } = require('../models');
+    
+    // Verify if the user actually bought the item and the order is completed
+    const hasBought = await Order.findOne({
+      where: {
+        userId,
+        status: 'completed'
+      },
+      include: [{
+        model: OrderItem,
+        where: { productId }
+      }]
+    });
+
+    if (!hasBought) {
+      return res.status(403).json({ message: 'You can only review products you have purchased and received.' });
+    }
+
     const Review = require('../models/Review');
     const newReview = await Review.create({
       rating,

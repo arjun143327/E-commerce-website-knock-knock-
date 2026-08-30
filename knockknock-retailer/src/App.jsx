@@ -65,6 +65,24 @@ const RevenueChart = ({ completedOrders = [] }) => {
 const NotificationToast = ({ notification, onClose }) => {
     if (!notification) return null;
 
+    if (notification.type === 'SUCCESS') {
+        return (
+            <div className="fixed top-4 left-4 right-4 z-50 animate-slide-in">
+                <div className="bg-white rounded-xl shadow-2xl border-l-4 border-green-500 p-4 flex items-start gap-3">
+                    <div className="bg-green-100 p-2 rounded-full text-green-600">
+                        <CheckCircle size={24} />
+                    </div>
+                    <div className="flex-1 flex items-center h-full">
+                        <h4 className="font-bold text-gray-800">{notification.title}</h4>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                        <XCircle size={20} />
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="fixed top-4 left-4 right-4 z-50 animate-slide-in">
             <div className="bg-white rounded-xl shadow-2xl border-l-4 border-purple-600 p-4 flex items-start gap-3">
@@ -73,7 +91,7 @@ const NotificationToast = ({ notification, onClose }) => {
                 </div>
                 <div className="flex-1">
                     <h4 className="font-bold text-gray-800">New Order Received! #{notification.id}</h4>
-                    <p className="text-sm text-gray-600">₹{notification.total.toLocaleString()} • {notification.items.length} Items</p>
+                    <p className="text-sm text-gray-600">₹{notification.total?.toLocaleString()} • {notification.items?.length} Items</p>
                     <p className="text-xs text-gray-400 mt-1">{notification.customer}</p>
                 </div>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -276,27 +294,8 @@ export default function App() {
         };
     }, [user]);
 
-    // 🔥 SIMULATE INCOMING ORDER (FOR DEMO BUTTON)
-    const simulateIncomingOrder = () => {
-        const randomItem = inventory[Math.floor(Math.random() * inventory.length)];
-        const newOrder = {
-            id: Math.floor(1000 + Math.random() * 9000),
-            customer: ["Rahul K.", "Priya S.", "Amit B.", "Sneha R."][Math.floor(Math.random() * 4)],
-            items: [
-                { ...randomItem, qty: 1 },
-                ...(Math.random() > 0.5 ? [{ ...inventory[0], qty: 1 }] : [])
-            ],
-            total: randomItem.price + (Math.random() > 0.5 ? inventory[0].price : 0),
-            status: 'pending',
-            time: new Date(),
-            address: "12, Gandhi Road, Avadi",
-            payment: "UPI"
-        };
-
-        setOrders(prev => [newOrder, ...prev]);
-        setNotification(newOrder);
-        setTimeout(() => setNotification(null), 4000);
-    };
+    // 🔥 SIMULATE INCOMING ORDER (REMOVED)
+    // The demo button was removed to force the app to rely on real incoming orders via Socket.io
 
     // 🔥 UPDATE ORDER STATUS
     const updateOrderStatus = async (orderId, newStatus) => {
@@ -395,15 +394,6 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                    <button 
-                        onClick={simulateIncomingOrder}
-                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-indigo-200 transition-colors flex items-center gap-1"
-                        title="Click to Simulate Customer Order"
-                    >
-                        <Bell size={12} className={notification ? "animate-bounce" : ""} />
-                        Demo
-                    </button>
-                    
                     <button className="p-2 text-gray-400 hover:text-gray-600">
                         <Settings size={20} />
                     </button>
@@ -496,8 +486,7 @@ export default function App() {
                             <div className="text-center py-20 opacity-50">
                                 <div className="text-6xl mb-4">💤</div>
                                 <p className="font-medium text-gray-600">No active orders</p>
-                                <p className="text-xs text-gray-400 mt-2">Waiting for orders from customers...</p>
-                                <button onClick={simulateIncomingOrder} className="mt-6 text-indigo-500 underline text-sm">Click to simulate an order</button>
+                                <p className="text-xs text-gray-400 mt-2">Waiting for real orders from customers...</p>
                             </div>
                         ) : (
                             activeOrders.map(order => (

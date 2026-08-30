@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { BottomNav } from '../shared/BottomNav';
 import { formatDateTime } from '../../utils/formatters';
 import { cancelOrder } from '../../api/orderApi';
+import { io } from 'socket.io-client';
 
 export const OrdersHistoryScreen = ({ orders, cartCount, onViewOrder }) => {
   const { setCurrentScreen, setTrackingOrderId, refreshUser } = useApp();
@@ -12,6 +13,18 @@ export const OrdersHistoryScreen = ({ orders, cartCount, onViewOrder }) => {
   React.useEffect(() => {
     setLocalOrders(orders);
   }, [orders]);
+
+  React.useEffect(() => {
+    const socket = io('http://localhost:3001');
+
+    socket.on('orderStatusChanged', ({ orderId, status }) => {
+      setLocalOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status } : o
+      ));
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Are you sure you want to cancel this order? Your KnockKnock wallet will be refunded immediately.')) return;

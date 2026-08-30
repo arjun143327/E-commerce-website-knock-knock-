@@ -104,7 +104,7 @@ exports.cancelOrder = async (req, res) => {
     await order.save();
 
     // Broadcast update
-    req.io.emit('orderUpdate', {
+    req.io.emit('orderStatusChanged', {
       orderId: order.id,
       status: order.status,
       customerId: order.userId
