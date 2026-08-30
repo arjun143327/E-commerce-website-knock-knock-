@@ -1,13 +1,31 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 const { connectDB, sequelize } = require('./config/db');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+  }
+});
+
+// Make io available to controllers
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files (images)
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -29,7 +47,7 @@ const startServer = async () => {
   await sequelize.sync({ alter: true });
   console.log('✅ Database models synced.');
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   });
 };

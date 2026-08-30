@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { getMe } from '../api/authApi';
 
 const AppContext = createContext();
 
@@ -41,6 +42,16 @@ export const AppProvider = ({ children }) => {
     setCurrentScreen('login');
   };
 
+  const refreshUser = async () => {
+    try {
+      const userData = await getMe();
+      setUser(userData);
+      localStorage.setItem('knockknock_user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  };
+
   const value = {
     currentScreen,
     setCurrentScreen,
@@ -55,7 +66,8 @@ export const AppProvider = ({ children }) => {
     selectedCategory,
     setSelectedCategory,
     login,
-    logout
+    logout,
+    refreshUser
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

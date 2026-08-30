@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { io } from 'socket.io-client';
 import { getMyOrders, placeOrder as apiPlaceOrder } from '../api/ordersApi';
 import { useApp } from '../context/AppContext';
 
@@ -38,14 +39,35 @@ export const useOrders = () => {
     fetchOrders();
   }, [fetchOrders]);
 
-  const createOrder = async (cart, total, savings, address) => {
+  useEffect(() => {
+    const socket = io('http://localhost:3001');
+
+    socket.on('orderStatusChanged', ({ orderId, status }) => {
+      setOrders(prevOrders => 
+        prevOrders.map(o => o.id === orderId ? { ...o, status } : o)
+      );
+      
+      setCurrentOrder(prevCurrent => {
+        if (prevCurrent && prevCurrent.id === orderId) {
+          return { ...prevCurrent, status };
+        }
+        return prevCurrent;
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  const createOrder = async (cart, total, savings, address, paymentMethod) => {
     try {
       const orderData = {
         items: cart,
         total,
         savings,
         address,
-        paymentMethod: 'Cash on Delivery'
+        paymentMethod: paymentMethod || 'Cash on Delivery'
       };
       
       const response = await apiPlaceOrder(orderData);

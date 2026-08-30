@@ -3,21 +3,26 @@ import { ArrowLeft, CreditCard, Wallet, Banknote, CheckCircle2, ShieldCheck, Che
 import { useApp } from '../../context/AppContext';
 
 export const PaymentScreen = ({ cartTotal, cartSavings, onPaymentComplete }) => {
-  const { setCurrentScreen } = useApp();
-  const [selectedMethod, setSelectedMethod] = useState('upi');
+  const { setCurrentScreen, user } = useApp();
+  const [selectedMethod, setSelectedMethod] = useState('wallet');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePay = () => {
+    if (selectedMethod === 'wallet' && user?.walletBalance < cartTotal) {
+      alert("Insufficient wallet balance!");
+      return;
+    }
     setIsProcessing(true);
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
-      onPaymentComplete(); // Triggers the order creation in App.jsx
+      onPaymentComplete(selectedMethod); // Triggers the order creation in App.jsx
     }, 2000);
   };
 
   const methods = [
-    { id: 'upi', icon: Wallet, label: 'UPI (GPay, PhonePe)', sub: 'Fastest' },
+    { id: 'wallet', icon: Wallet, label: 'KnockKnock Wallet', sub: `Balance: ₹${user?.walletBalance || 0}` },
+    { id: 'upi', icon: Banknote, label: 'UPI (GPay, PhonePe)', sub: 'Fastest' },
     { id: 'card', icon: CreditCard, label: 'Credit / Debit Card', sub: 'Secure' },
     { id: 'cod', icon: Banknote, label: 'Cash on Delivery', sub: 'Pay at door' },
   ];
@@ -86,11 +91,17 @@ export const PaymentScreen = ({ cartTotal, cartSavings, onPaymentComplete }) => 
       <div className="p-4 bg-white border-t">
         <button
           onClick={handlePay}
-          disabled={isProcessing}
-          className="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-green-700 transition transform active:scale-95 flex items-center justify-center gap-2"
+          disabled={isProcessing || (selectedMethod === 'wallet' && user?.walletBalance < cartTotal)}
+          className={`w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg transition transform flex items-center justify-center gap-2 ${
+            selectedMethod === 'wallet' && user?.walletBalance < cartTotal 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-green-600 hover:bg-green-700 active:scale-95'
+          }`}
         >
           {isProcessing ? (
             <>Processing...</>
+          ) : (selectedMethod === 'wallet' && user?.walletBalance < cartTotal) ? (
+            <>Insufficient Balance</>
           ) : (
             <>
               <span>Pay ₹{cartTotal.toLocaleString()}</span>

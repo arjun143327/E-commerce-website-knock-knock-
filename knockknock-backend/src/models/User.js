@@ -27,6 +27,18 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('user', 'admin'),
     defaultValue: 'user',
   },
+  walletBalance: {
+    type: DataTypes.INTEGER,
+    defaultValue: 5000,
+  },
+  address: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  }
 }, {
   tableName: 'users',
   timestamps: true,

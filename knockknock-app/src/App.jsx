@@ -19,7 +19,7 @@ import { ProfileScreen } from './components/screens/ProfileScreen';
 
 function AppContent() {
   // FIX: Combined all useApp values into one line here
-  const { currentScreen, setCurrentScreen, userLocation } = useApp();
+  const { currentScreen, setCurrentScreen, userLocation, refreshUser } = useApp();
   
   const { 
     cart, 
@@ -40,10 +40,17 @@ function AppContent() {
   } = useOrders();
 
   // Logic to handle payment completion
-  const handlePaymentComplete = () => {
-    const order = createOrder(cart, cartTotal, cartSavings, userLocation);
-    clearCart();
-    setCurrentScreen('orderSuccess');
+  const handlePaymentComplete = async (paymentMethod) => {
+    try {
+      const paymentType = paymentMethod === 'wallet' ? 'Wallet' : 'Cash on Delivery';
+      const order = await createOrder(cart, cartTotal, cartSavings, userLocation, paymentType);
+      clearCart();
+      setCurrentScreen('orderSuccess');
+      refreshUser(); // Refresh wallet balance
+    } catch (error) {
+      console.error('Failed to complete payment', error);
+      alert(error.response?.data?.message || 'Payment Failed');
+    }
   };
 
   const handleViewOrder = (order) => {

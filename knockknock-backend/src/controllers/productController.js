@@ -79,3 +79,13 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.uploadImage = (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No image uploaded' });
+  }
+  
+  // Return the public URL for the image
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.status(200).json({ imageUrl });
+};

@@ -6,36 +6,55 @@ import {
     LogOut, TrendingUp, Zap, MapPin
 } from 'lucide-react';
 import { useEffect } from 'react';
-import { orderChannel } from './orderChannel';
+import { io } from 'socket.io-client';
 
 // --- MOCK DATA FALLBACK (in case of empty DB) ---
 const MOCK_PRODUCTS = [];
 
 import { getAllOrders, updateOrderStatus as apiUpdateOrderStatus } from './api/adminOrdersApi';
-import { updateProduct } from './api/adminProductsApi';
+import { updateProduct, createProduct, uploadProductImage } from './api/adminProductsApi';
 import { getProducts } from './api/productsApi';
 
 // --- SUB-COMPONENTS ---
 
-const RevenueChart = () => {
-    const data = [40, 65, 45, 80, 55, 90, 70];
-    const max = Math.max(...data);
+const RevenueChart = ({ completedOrders = [] }) => {
+    // Generate last 7 days labels (e.g. M, T, W) and initialize totals to 0
+    const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const todayStr = new Date().toDateString();
+    
+    let chartData = Array(7).fill(0);
+    const dayLabels = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dayLabels.push(days[d.getDay()]);
+        
+        // Sum completed orders for this day
+        const dayTotal = completedOrders
+            .filter(o => o.status === 'completed' && new Date(o.time).toDateString() === d.toDateString())
+            .reduce((sum, o) => sum + o.total, 0);
+        
+        chartData[6 - i] = dayTotal;
+    }
+
+    const max = Math.max(...chartData) || 1; // Prevent div by 0
     
     return (
         <div className="w-full h-48 flex items-end justify-between gap-2 pt-4 px-2">
-            {data.map((val, i) => (
+            {chartData.map((val, i) => (
                 <div key={i} className="flex flex-col items-center w-full group">
                     <div className="relative w-full flex items-end justify-center h-40">
                         <div 
                             className="w-full max-w-[20px] bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-lg transition-all duration-500 group-hover:opacity-80"
-                            style={{ height: `${(val / max) * 100}%` }}
+                            style={{ height: `${Math.max((val / max) * 100, 5)}%` }}
                         ></div>
-                        <div className="absolute -top-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                            ₹{val}k
+                        <div className="absolute -top-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                            ₹{val.toLocaleString()}
                         </div>
                     </div>
-                    <span className="text-xs text-gray-400 mt-2">
-                        {['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}
+                    <span className="text-xs text-gray-400 mt-2 font-bold">
+                        {dayLabels[i]}
                     </span>
                 </div>
             ))}
@@ -154,6 +173,11 @@ export default function App() {
     const [inventory, setInventory] = useState([]);
     const [notification, setNotification] = useState(null);
     const [isStoreOpen, setIsStoreOpen] = useState(true);
+    
+    // New Product Form State
+    const [isAddingProduct, setIsAddingProduct] = useState(false);
+    const [newProduct, setNewProduct] = useState({ name: '', price: '', mrp: '', category: 'Electronics' });
+    const [newImageFile, setNewImageFile] = useState(null);
 
     const loadData = async () => {
         try {
@@ -203,39 +227,54 @@ export default function App() {
     const activeOrders = orders.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
     const completedOrders = orders.filter(o => ['completed', 'rejected'].includes(o.status));
 
-    // 🔥 LISTEN FOR INCOMING ORDERS FROM CUSTOMER APP
+    // 🔥 LISTEN FOR INCOMING ORDERS FROM BACKEND
     useEffect(() => {
+        if (!user) return; // Only connect if logged in
+
+        const socket = io('http://localhost:3001');
+
         console.log('🎧 Retailer app listening for orders...');
         
-        const listener = orderChannel.onMessage((message) => {
-            console.log('📩 Retailer received:', message);
+        socket.on('newOrder', (newOrder) => {
+            console.log('📩 Retailer received new order:', newOrder);
             
-            if (message.type === 'NEW_ORDER') {
-                const newOrder = message.payload;
-                
-                // Add to orders
-                setOrders(prev => [newOrder, ...prev]);
-                
-                // Show notification
-                setNotification(newOrder);
-                
-                // Auto hide after 5 seconds
-                setTimeout(() => setNotification(null), 5000);
-            }
+            // Format order properly for the dashboard
+            const formattedOrder = {
+                id: newOrder.id,
+                customer: newOrder.User?.name || 'Customer',
+                items: newOrder.OrderItems.map(item => ({
+                    ...item.Product,
+                    qty: item.quantity,
+                    price: item.priceAtPurchase
+                })),
+                total: newOrder.total,
+                status: newOrder.status,
+                time: new Date(newOrder.created_at),
+                address: newOrder.deliveryAddress,
+                payment: newOrder.paymentMethod
+            };
+
+            // Add to orders
+            setOrders(prev => [formattedOrder, ...prev]);
             
-            if (message.type === 'ORDER_STATUS_UPDATE') {
-                const { orderId, status } = message.payload;
-                setOrders(prev => prev.map(o => 
-                    o.id === orderId ? { ...o, status } : o
-                ));
-            }
+            // Show notification
+            setNotification(formattedOrder);
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => setNotification(null), 5000);
+        });
+
+        socket.on('orderStatusChanged', ({ orderId, status }) => {
+            setOrders(prev => prev.map(o => 
+                o.id === orderId ? { ...o, status } : o
+            ));
         });
 
         return () => {
-            console.log('🔇 Cleaning up listener');
-            orderChannel.removeListener(listener);
+            console.log('🔇 Cleaning up socket listener');
+            socket.disconnect();
         };
-    }, []);
+    }, [user]);
 
     // 🔥 SIMULATE INCOMING ORDER (FOR DEMO BUTTON)
     const simulateIncomingOrder = () => {
@@ -264,9 +303,7 @@ export default function App() {
         try {
             await apiUpdateOrderStatus(orderId, newStatus);
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-            if (typeof orderChannel !== 'undefined' && orderChannel.updateOrderStatus) {
-                orderChannel.updateOrderStatus(orderId, newStatus);
-            }
+            // socket.io handles emitting this change to customers
         } catch (error) {
             console.error('Failed to update status', error);
         }
@@ -285,6 +322,39 @@ export default function App() {
             ));
         } catch (error) {
             console.error('Failed to update stock', error);
+        }
+    };
+
+    // 🔥 HANDLE ADD PRODUCT
+    const handleAddProduct = async (e) => {
+        e.preventDefault();
+        try {
+            let imageUrl = '📦'; // Default emoji fallback
+            
+            if (newImageFile) {
+                const uploadRes = await uploadProductImage(newImageFile);
+                imageUrl = uploadRes.imageUrl;
+            }
+
+            const added = await createProduct({
+                ...newProduct,
+                price: Number(newProduct.price),
+                mrp: Number(newProduct.mrp),
+                image: imageUrl,
+                stock: 10, // Default starting stock
+                storeId: 1
+            });
+
+            setInventory([...inventory, { ...added, inStock: true }]);
+            setIsAddingProduct(false);
+            setNewProduct({ name: '', price: '', mrp: '', category: 'Electronics' });
+            setNewImageFile(null);
+            
+            // Show toast
+            setNotification({ type: 'SUCCESS', title: 'Product Added' });
+            setTimeout(() => setNotification(null), 3000);
+        } catch (error) {
+            console.error('Failed to add product', error);
         }
     };
 
@@ -356,7 +426,9 @@ export default function App() {
                             </div>
                             <div className="text-right">
                                 <p className="text-gray-400 text-xs">Today's Revenue</p>
-                                <p className="text-xl font-bold text-green-600">₹14,500</p>
+                                <p className="text-xl font-bold text-green-600">
+                                    ₹{completedOrders.filter(o => o.status === 'completed' && new Date(o.time).toDateString() === new Date().toDateString()).reduce((a, b) => a + b.total, 0).toLocaleString()}
+                                </p>
                             </div>
                         </div>
 
@@ -366,7 +438,7 @@ export default function App() {
                                     <ShoppingBag size={20} />
                                     <span className="text-sm font-semibold">Orders</span>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-800">{activeOrders.length + 12}</p>
+                                <p className="text-2xl font-bold text-gray-800">{activeOrders.length}</p>
                                 <p className="text-xs text-green-500 flex items-center gap-1">
                                     <TrendingUp size={12} /> +15% vs yest.
                                 </p>
@@ -389,7 +461,7 @@ export default function App() {
                                     <option>Orders</option>
                                 </select>
                             </div>
-                            <RevenueChart />
+                            <RevenueChart completedOrders={completedOrders} />
                         </div>
 
                         <div>
@@ -521,13 +593,52 @@ export default function App() {
                 {/* INVENTORY TAB */}
                 {activeTab === 'inventory' && (
                     <div className="p-4">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">Manage Inventory</h2>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-gray-800">Manage Inventory</h2>
+                            <button 
+                                onClick={() => setIsAddingProduct(!isAddingProduct)}
+                                className="bg-indigo-600 text-white px-3 py-1.5 rounded text-sm font-bold shadow hover:bg-indigo-700"
+                            >
+                                {isAddingProduct ? 'Cancel' : '+ Add Product'}
+                            </button>
+                        </div>
+
+                        {isAddingProduct && (
+                            <form onSubmit={handleAddProduct} className="bg-white p-4 rounded-xl shadow border border-indigo-100 mb-6 space-y-3">
+                                <div>
+                                    <label className="text-xs text-gray-500 font-bold">Product Name</label>
+                                    <input required type="text" className="w-full border p-2 rounded mt-1" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <label className="text-xs text-gray-500 font-bold">Price</label>
+                                        <input required type="number" className="w-full border p-2 rounded mt-1" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="text-xs text-gray-500 font-bold">MRP</label>
+                                        <input required type="number" className="w-full border p-2 rounded mt-1" value={newProduct.mrp} onChange={e => setNewProduct({...newProduct, mrp: e.target.value})} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 font-bold">Image Upload</label>
+                                    <input type="file" accept="image/*" className="w-full border p-2 rounded mt-1 text-sm" onChange={e => setNewImageFile(e.target.files[0])} />
+                                </div>
+                                <button type="submit" className="w-full py-2 bg-indigo-600 text-white font-bold rounded shadow hover:bg-indigo-700 mt-2">
+                                    Save Product
+                                </button>
+                            </form>
+                        )}
+
                         <div className="space-y-4">
                             {inventory.map(product => (
                                 <div key={product.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                                            {product.image}
+                                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl overflow-hidden">
+                                            {product.image?.startsWith('/') ? (
+                                                <img src={`http://localhost:3001${product.image}`} alt={product.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                product.image || '📦'
+                                            )}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-gray-800 text-sm">{product.name}</h3>

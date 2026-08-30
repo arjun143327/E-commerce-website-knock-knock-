@@ -6,7 +6,13 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
     <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden">
       <div className="p-4">
         <div className="flex gap-4">
-          <div className="text-6xl flex-shrink-0">{product.image}</div>
+          <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-6xl">
+            {product.image?.startsWith('/') ? (
+              <img src={`http://localhost:3001${product.image}`} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              product.image || '📦'
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex-1">

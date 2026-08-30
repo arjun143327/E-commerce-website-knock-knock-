@@ -1,4 +1,4 @@
-const { Order, OrderItem, Product } = require('../models');
+const { Order, OrderItem, Product, User } = require('../models');
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -7,6 +7,20 @@ exports.placeOrder = async (req, res) => {
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Order must contain items' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Handle Wallet Payment
+    if (paymentMethod === 'Wallet') {
+      if (user.walletBalance < total) {
+        return res.status(400).json({ message: 'Insufficient wallet balance' });
+      }
+      user.walletBalance -= total;
+      await user.save();
     }
 
     // Create the order
@@ -28,6 +42,18 @@ exports.placeOrder = async (req, res) => {
     }));
 
     await OrderItem.bulkCreate(orderItems);
+
+    const savedOrder = await Order.findByPk(order.id, {
+      include: [
+        { model: OrderItem, include: [Product] },
+        { model: User, attributes: ['id', 'name', 'email'] }
+      ]
+    });
+
+    // Emit socket event to admin
+    if (req.io) {
+      req.io.emit('newOrder', savedOrder);
+    }
 
     res.status(201).json({ message: 'Order placed successfully', order });
   } catch (error) {
@@ -89,6 +115,12 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     await order.update({ status });
+
+    // Emit socket event to user and admin
+    if (req.io) {
+      req.io.emit('orderStatusChanged', { orderId: order.id, status });
+    }
+
     res.json(order);
   } catch (error) {
     console.error('Error updating order status:', error);

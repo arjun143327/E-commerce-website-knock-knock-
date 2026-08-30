@@ -9,3 +9,13 @@ export const register = async (name, email, password) => {
   const response = await api.post('/auth/register', { name, email, password });
   return response.data;
 };
+
+export const getMe = async () => {
+  const response = await api.get('/auth/me');
+  return response.data;
+};
+
+export const updateProfile = async (data) => {
+  const response = await api.put('/auth/me', data);
+  return response.data;
+};
