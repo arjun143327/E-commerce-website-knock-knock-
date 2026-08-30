@@ -8,13 +8,12 @@ import {
 import { useEffect } from 'react';
 import { orderChannel } from './orderChannel';
 
-// --- MOCK DATA ---
-const MOCK_PRODUCTS = [
-    { id: 1, name: "iPhone 15 Pro", price: 134900, mrp: 144900, storeId: 1, inStock: true, category: "Electronics", image: "📱", rating: 4.8, orders: 12 },
-    { id: 2, name: "Samsung Galaxy S24", price: 79999, mrp: 89999, storeId: 1, inStock: true, category: "Electronics", image: "📱", rating: 4.6, orders: 8 },
-    { id: 6, name: "Sony Headphones", price: 8999, mrp: 12999, storeId: 1, inStock: false, category: "Electronics", image: "🎧", rating: 4.4, orders: 5 },
-    { id: 7, name: "AirPods Pro", price: 24999, mrp: 27900, storeId: 1, inStock: true, category: "Electronics", image: "🎧", rating: 4.9, orders: 22 },
-];
+// --- MOCK DATA FALLBACK (in case of empty DB) ---
+const MOCK_PRODUCTS = [];
+
+import { getAllOrders, updateOrderStatus as apiUpdateOrderStatus } from './api/adminOrdersApi';
+import { updateProduct } from './api/adminProductsApi';
+import { getProducts } from './api/productsApi';
 
 // --- SUB-COMPONENTS ---
 
@@ -66,16 +65,29 @@ const NotificationToast = ({ notification, onClose }) => {
     );
 };
 
-const LoginScreen = ({ onLogin }) => {
-    const [loading, setLoading] = useState(false);
+import { login as apiLogin } from './api/authApi';
 
-    const handleLogin = (e) => {
+const LoginScreen = ({ onLogin }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
-            onLogin();
+        setError('');
+        try {
+            const data = await apiLogin(email, password);
+            if (data.user.role !== 'admin') {
+                throw new Error('Not authorized as admin');
+            }
+            onLogin(data);
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Login failed');
+        } finally {
             setLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -91,23 +103,29 @@ const LoginScreen = ({ onLogin }) => {
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label className="text-white/80 text-sm ml-1 mb-1 block">Phone Number</label>
+                        <label className="text-white/80 text-sm ml-1 mb-1 block">Admin Email</label>
                         <input 
-                            type="tel" 
-                            defaultValue="9876543210"
+                            type="email" 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="admin@knockknock.com"
                             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
                         />
                     </div>
                     <div>
-                        <label className="text-white/80 text-sm ml-1 mb-1 block">Store ID / PIN</label>
+                        <label className="text-white/80 text-sm ml-1 mb-1 block">Password</label>
                         <input 
                             type="password" 
-                            defaultValue="1234"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter password"
                             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-400"
                         />
                     </div>
+                    {error && <p className="text-red-300 text-sm text-center">{error}</p>}
                     <button 
                         type="submit"
+                        disabled={loading}
                         className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2"
                     >
                         {loading ? (
@@ -130,12 +148,56 @@ const LoginScreen = ({ onLogin }) => {
 // --- MAIN APP COMPONENT ---
 
 export default function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [user, setUser] = useState(null);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [orders, setOrders] = useState([]);
-    const [inventory, setInventory] = useState(MOCK_PRODUCTS);
+    const [inventory, setInventory] = useState([]);
     const [notification, setNotification] = useState(null);
     const [isStoreOpen, setIsStoreOpen] = useState(true);
+
+    const loadData = async () => {
+        try {
+            const [ordersData, productsData] = await Promise.all([
+                getAllOrders(),
+                getProducts()
+            ]);
+            
+            // Map orders to include proper fields
+            const mappedOrders = ordersData.map(dbOrder => ({
+                id: dbOrder.id,
+                customer: dbOrder.User?.name || 'Customer',
+                items: dbOrder.OrderItems.map(item => ({
+                    ...item.Product,
+                    qty: item.quantity,
+                    price: item.priceAtPurchase
+                })),
+                total: dbOrder.total,
+                status: dbOrder.status,
+                time: new Date(dbOrder.created_at),
+                address: dbOrder.deliveryAddress,
+                payment: dbOrder.paymentMethod
+            }));
+            
+            setOrders(mappedOrders);
+            
+            // Map products to inventory
+            const mappedProducts = productsData.map(p => ({
+                ...p,
+                inStock: p.stock > 0
+            }));
+            
+            setInventory(mappedProducts);
+        } catch (error) {
+            console.error('Failed to load data', error);
+        }
+    };
+
+    const handleLoginSuccess = (data) => {
+        localStorage.setItem('knockknock_token', data.token);
+        localStorage.setItem('knockknock_user', JSON.stringify(data.user));
+        setUser(data.user);
+        loadData();
+    };
 
     // 🔥 CALCULATE ACTIVE AND COMPLETED ORDERS
     const activeOrders = orders.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
@@ -198,16 +260,32 @@ export default function App() {
     };
 
     // 🔥 UPDATE ORDER STATUS
-    const updateOrderStatus = (orderId, newStatus) => {
-        setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-        orderChannel.updateOrderStatus(orderId, newStatus);
+    const updateOrderStatus = async (orderId, newStatus) => {
+        try {
+            await apiUpdateOrderStatus(orderId, newStatus);
+            setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+            if (typeof orderChannel !== 'undefined' && orderChannel.updateOrderStatus) {
+                orderChannel.updateOrderStatus(orderId, newStatus);
+            }
+        } catch (error) {
+            console.error('Failed to update status', error);
+        }
     };
 
     // 🔥 TOGGLE STOCK
-    const toggleStock = (productId) => {
-        setInventory(inventory.map(p => 
-            p.id === productId ? { ...p, inStock: !p.inStock } : p
-        ));
+    const toggleStock = async (productId) => {
+        const product = inventory.find(p => p.id === productId);
+        if (!product) return;
+        
+        try {
+            const newStock = product.inStock ? 0 : 10; // Simple toggle
+            await updateProduct(productId, { stock: newStock });
+            setInventory(inventory.map(p => 
+                p.id === productId ? { ...p, inStock: !p.inStock, stock: newStock } : p
+            ));
+        } catch (error) {
+            console.error('Failed to update stock', error);
+        }
     };
 
     // 🔥 RENDER STATUS BADGE
@@ -226,7 +304,7 @@ export default function App() {
         );
     };
 
-    if (!isLoggedIn) return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+    if (!user) return <LoginScreen onLogin={handleLoginSuccess} />;
 
     return (
         <div className="flex flex-col h-screen bg-gray-50 max-w-md mx-auto shadow-2xl overflow-hidden relative border-x border-gray-200">
@@ -525,7 +603,11 @@ export default function App() {
                 </button>
                 
                 <button 
-                    onClick={() => setIsLoggedIn(false)}
+                    onClick={() => {
+                        localStorage.removeItem('knockknock_token');
+                        localStorage.removeItem('knockknock_user');
+                        setUser(null);
+                    }}
                     className="flex flex-col items-center gap-1 text-gray-400 hover:text-red-500 transition-colors"
                 >
                     <LogOut size={24} />

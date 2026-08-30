@@ -12,27 +12,40 @@ export const useApp = () => {
 
 export const AppProvider = ({ children }) => {
   const [currentScreen, setCurrentScreen] = useState('splash');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  
+  // Check for token on mount
+  React.useEffect(() => {
+    const token = localStorage.getItem('knockknock_token');
+    const savedUser = localStorage.getItem('knockknock_user');
+    if (token && savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
   const [userLocation, setUserLocation] = useState('Avadi, Tamil Nadu');
   const [selectedStore, setSelectedStore] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const login = () => {
-    setIsLoggedIn(true);
+  const login = (userData, token) => {
+    localStorage.setItem('knockknock_token', token);
+    localStorage.setItem('knockknock_user', JSON.stringify(userData));
+    setUser(userData);
     setCurrentScreen('home');
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
+    localStorage.removeItem('knockknock_token');
+    localStorage.removeItem('knockknock_user');
+    setUser(null);
     setCurrentScreen('login');
   };
 
   const value = {
     currentScreen,
     setCurrentScreen,
-    isLoggedIn,
-    setIsLoggedIn,
+    user,
+    setUser,
     userLocation,
     setUserLocation,
     selectedStore,

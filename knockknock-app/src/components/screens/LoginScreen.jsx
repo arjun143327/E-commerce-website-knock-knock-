@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { login as apiLogin } from '../../api/authApi';
 
 export const LoginScreen = () => {
   const { login, setCurrentScreen } = useApp();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const data = await apiLogin(email, password);
+      login(data.user, data.token);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex flex-col">
@@ -17,10 +36,12 @@ export const LoginScreen = () => {
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
               <input 
-                type="tel" 
-                placeholder="+91 98765 43210"
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="john@example.com"
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
               />
             </div>
@@ -29,16 +50,21 @@ export const LoginScreen = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
               <input 
                 type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
               />
             </div>
 
+            {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
+
             <button 
-              onClick={login}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg"
+              onClick={handleLogin}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg disabled:opacity-50"
             >
-              Login
+              {loading ? 'Logging in...' : 'Login'}
             </button>
 
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600">

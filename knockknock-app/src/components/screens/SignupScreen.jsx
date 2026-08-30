@@ -1,8 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { register as apiRegister } from '../../api/authApi';
 
 export const SignupScreen = () => {
-  const { login, setCurrentScreen, userLocation } = useApp();
+  const { setCurrentScreen } = useApp();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await apiRegister(name, email, password);
+      setCurrentScreen('login');
+    } catch (err) {
+      if (err.response?.data?.errors) {
+        setError(err.response.data.errors.map(e => e.msg).join(', '));
+      } else {
+        setError(err.response?.data?.message || 'Registration failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex flex-col overflow-auto">
@@ -19,16 +43,20 @@ export const SignupScreen = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
               <input 
                 type="text" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
               <input 
-                type="tel" 
-                placeholder="+91 98765 43210"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="john@example.com"
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
               />
             </div>
@@ -37,6 +65,8 @@ export const SignupScreen = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
               <input 
                 type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create strong password"
                 className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
               />
@@ -52,11 +82,14 @@ export const SignupScreen = () => {
               />
             </div>
 
+            {error && <p className="text-red-500 text-sm font-bold text-center">{error}</p>}
+
             <button 
-              onClick={login}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg"
+              onClick={handleSignup}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg disabled:opacity-50"
             >
-              Create Account
+              {loading ? 'Creating...' : 'Create Account'}
             </button>
           </div>
 

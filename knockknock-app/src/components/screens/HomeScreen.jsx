@@ -2,7 +2,7 @@ import React from 'react';
 import { Store, TrendingUp, Zap, Clock, Star, Package } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { MOCK_STORES } from '../../data/stores';
-import { MOCK_PRODUCTS } from '../../data/products';
+import { useProducts } from '../../hooks/useProducts';
 import { OFFERS } from '../../data/constants';
 import { Header } from '../shared/Header';
 import { CategoryPills } from '../shared/CategoryPills';
@@ -13,12 +13,7 @@ import { BottomNav } from '../shared/BottomNav';
 export const HomeScreen = ({ cart, onAddToCart, onUpdateQuantity, ordersCount }) => {
   const { selectedStore, setSelectedStore, searchQuery, selectedCategory } = useApp();
 
-  const filteredProducts = MOCK_PRODUCTS.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-    const matchesStore = !selectedStore || p.storeId === selectedStore.id;
-    return matchesSearch && matchesCategory && matchesStore;
-  });
+  const { products: filteredProducts, loading } = useProducts();
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
@@ -87,7 +82,11 @@ export const HomeScreen = ({ cart, onAddToCart, onUpdateQuantity, ordersCount })
             )}
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16 text-gray-500">
+              <p className="text-lg font-semibold">Loading products...</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               <Package size={64} className="mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-semibold">No products found</p>

@@ -1,43 +1,73 @@
-import { useState } from 'react';
-import { generateOrderId } from '../utils/formatters';
+import { useState, useEffect, useCallback } from 'react';
+import { getMyOrders, placeOrder as apiPlaceOrder } from '../api/ordersApi';
+import { useApp } from '../context/AppContext';
 
 export const useOrders = () => {
   const [orders, setOrders] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { user } = useApp();
 
-  const createOrder = (cart, total, savings, userLocation) => {
-    const newOrder = {
-      id: generateOrderId(),
-      items: [...cart],
-      total: total,
-      savings: savings,
-      status: 'placed',
-      timestamp: new Date().toISOString(),
-      deliveryAddress: userLocation,
-      deliveryPerson: {
-        name: "Rajesh Kumar",
-        phone: "+91 98765 43210",
-        rating: 4.8,
-        vehicle: "Bike"
-      }
-    };
-    
-    setOrders([newOrder, ...orders]);
-    setCurrentOrder(newOrder);
-    return newOrder;
-  };
-
-  const updateOrderStatus = (orderId, status) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? {...order, status} : order
-    ));
-    if (currentOrder?.id === orderId) {
-      setCurrentOrder({...currentOrder, status});
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const data = await getMyOrders();
+      // Map data to expected format if needed
+      const mappedOrders = data.map(dbOrder => ({
+        id: dbOrder.id,
+        items: dbOrder.OrderItems.map(item => ({
+          ...item.Product,
+          quantity: item.quantity,
+          price: item.priceAtPurchase
+        })),
+        total: dbOrder.total,
+        status: dbOrder.status,
+        date: new Date(dbOrder.created_at).toLocaleDateString(),
+        deliveryEta: dbOrder.status === 'completed' ? 'Delivered' : 'Arriving soon'
+      }));
+      setOrders(mappedOrders);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [user]);
 
-  const getOrderById = (orderId) => {
-    return orders.find(order => order.id === orderId);
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const createOrder = async (cart, total, savings, address) => {
+    try {
+      const orderData = {
+        items: cart,
+        total,
+        savings,
+        address,
+        paymentMethod: 'Cash on Delivery'
+      };
+      
+      const response = await apiPlaceOrder(orderData);
+      
+      // Update local state by refetching from server
+      await fetchOrders();
+      
+      const newOrder = {
+        id: response.order.id,
+        items: cart,
+        total,
+        status: 'pending',
+        date: new Date().toLocaleDateString(),
+        deliveryEta: '10-15 mins'
+      };
+      
+      setCurrentOrder(newOrder);
+      return newOrder;
+    } catch (error) {
+      console.error('Failed to place order:', error);
+      throw error;
+    }
   };
 
   return {
@@ -45,7 +75,6 @@ export const useOrders = () => {
     currentOrder,
     setCurrentOrder,
     createOrder,
-    updateOrderStatus,
-    getOrderById
+    loading
   };
 };

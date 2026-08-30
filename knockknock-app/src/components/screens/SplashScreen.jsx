@@ -2,15 +2,19 @@ import React, { useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 
 export const SplashScreen = () => {
-  const { setCurrentScreen } = useApp();
+  const { setCurrentScreen, user } = useApp();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setCurrentScreen('login');
+      if (user) {
+        setCurrentScreen('home');
+      } else {
+        setCurrentScreen('login');
+      }
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [setCurrentScreen]);
+  }, [setCurrentScreen, user]);
 
   return (
     <div className="h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center relative overflow-hidden">
