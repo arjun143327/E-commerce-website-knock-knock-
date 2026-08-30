@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 export const useProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { searchQuery, selectedCategory, selectedStore } = useApp();
+  const { searchQuery, selectedCategory, selectedStore, sortBy } = useApp();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -14,7 +14,8 @@ export const useProducts = () => {
         const filters = {
           search: searchQuery,
           category: selectedCategory,
-          storeId: selectedStore?.id
+          storeId: selectedStore?.id,
+          sortBy
         };
         const data = await getProducts(filters);
         setProducts(data);
@@ -26,7 +27,7 @@ export const useProducts = () => {
     };
 
     fetchProducts();
-  }, [searchQuery, selectedCategory, selectedStore]);
+  }, [searchQuery, selectedCategory, selectedStore, sortBy]);
 
   return { products, loading };
 };

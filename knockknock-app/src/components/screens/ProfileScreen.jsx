@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { User, Package, MapPin, Heart, CreditCard, Headphones, LogOut, ChevronRight, Wallet, Edit2, Check, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Package, MapPin, Heart, CreditCard, Headphones, LogOut, ChevronRight, Wallet, Edit2, Check, X, ArrowLeft } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { BottomNav } from '../shared/BottomNav';
 import { updateProfile } from '../../api/authApi';
+import { getWishlist } from '../../api/productsApi';
+import { ProductCard } from '../shared/ProductCard';
 
 export const ProfileScreen = ({ cartCount, ordersCount }) => {
   const { logout, userLocation, user, refreshUser } = useApp();
@@ -13,6 +15,27 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
     address: user?.address || userLocation
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('menu');
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'wishlist') {
+      loadWishlist();
+    }
+  }, [activeTab]);
+
+  const loadWishlist = async () => {
+    try {
+      setIsLoadingWishlist(true);
+      const items = await getWishlist();
+      setWishlistItems(items);
+    } catch (error) {
+      console.error('Failed to load wishlist', error);
+    } finally {
+      setIsLoadingWishlist(false);
+    }
+  };
 
   const menuItems = [
     { icon: Package, label: 'Your Orders', sub: 'Track, return, or buy again' },
@@ -67,9 +90,37 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
         </div>
       </div>
 
-      {/* Menu Grid / Edit Form */}
+      {/* Menu Grid / Edit Form / Wishlist View */}
       <div className="flex-1 overflow-auto p-4">
-        {isEditing ? (
+        {activeTab === 'wishlist' ? (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={() => setActiveTab('menu')} className="p-2 hover:bg-gray-200 rounded-full">
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className="text-xl font-bold">Your Wishlist</h2>
+            </div>
+            
+            {isLoadingWishlist ? (
+              <p className="text-center text-gray-500 py-10">Loading your favorites...</p>
+            ) : wishlistItems.length === 0 ? (
+              <div className="text-center py-20 text-gray-400">
+                <Heart size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Your wishlist is empty</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {wishlistItems.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={() => {}} // Could be wired to actual addToCart
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : isEditing ? (
           <div className="bg-white rounded-2xl shadow-sm p-4 mb-6 space-y-4">
             <div>
               <label className="text-sm text-gray-500 mb-1 block">Phone Number</label>
@@ -112,7 +163,13 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
             {menuItems.map((item, idx) => (
-              <button key={idx} className="w-full flex items-center p-4 border-b last:border-0 hover:bg-gray-50 transition">
+              <button 
+                key={idx} 
+                onClick={() => {
+                  if (item.label === 'Wishlist') setActiveTab('wishlist');
+                }}
+                className="w-full flex items-center p-4 border-b last:border-0 hover:bg-gray-50 transition"
+              >
                 <div className="bg-purple-50 p-3 rounded-full text-purple-600 mr-4">
                   <item.icon size={20} />
                 </div>
@@ -129,13 +186,15 @@ export const ProfileScreen = ({ cartCount, ordersCount }) => {
           </div>
         )}
 
-        <button 
-          onClick={logout}
-          className="w-full bg-white text-red-500 p-4 rounded-2xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-red-50 transition"
-        >
-          <LogOut size={20} />
-          <span>Log Out</span>
-        </button>
+        {activeTab === 'menu' && !isEditing && (
+          <button 
+            onClick={logout}
+            className="w-full bg-white text-red-500 p-4 rounded-2xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-red-50 transition"
+          >
+            <LogOut size={20} />
+            <span>Log Out</span>
+          </button>
+        )}
         
         <p className="text-center text-xs text-gray-400 mt-6">Version 1.0.0 • Knock Knock Retail</p>
       </div>

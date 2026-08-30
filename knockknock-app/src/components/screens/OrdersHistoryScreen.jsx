@@ -5,7 +5,7 @@ import { BottomNav } from '../shared/BottomNav';
 import { formatDateTime } from '../../utils/formatters';
 
 export const OrdersHistoryScreen = ({ orders, cartCount, onViewOrder }) => {
-  const { setCurrentScreen } = useApp();
+  const { setCurrentScreen, setTrackingOrderId } = useApp();
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
@@ -51,8 +51,13 @@ export const OrdersHistoryScreen = ({ orders, cartCount, onViewOrder }) => {
                         {formatDateTime(order.timestamp)}
                       </div>
                     </div>
-                    <div className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                      Completed
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      order.status === 'out_for_delivery' ? 'bg-blue-100 text-blue-700 animate-pulse' :
+                      'bg-orange-100 text-orange-700'
+                    }`}>
+                      {order.status === 'out_for_delivery' ? 'Out for Delivery' : 
+                       order.status?.charAt(0).toUpperCase() + order.status?.slice(1)}
                     </div>
                   </div>
 
@@ -84,9 +89,21 @@ export const OrdersHistoryScreen = ({ orders, cartCount, onViewOrder }) => {
                     >
                       View Details
                     </button>
-                    <button className="px-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
-                      Reorder
-                    </button>
+                    {order.status === 'out_for_delivery' ? (
+                      <button 
+                        onClick={() => {
+                          setTrackingOrderId(order.id);
+                          setCurrentScreen('locationMap');
+                        }}
+                        className="flex-1 bg-blue-100 text-blue-700 py-3 rounded-xl font-bold hover:bg-blue-200 transition"
+                      >
+                        Track Order
+                      </button>
+                    ) : (
+                      <button className="px-6 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
+                        Reorder
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

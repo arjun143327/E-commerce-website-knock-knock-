@@ -19,7 +19,11 @@ const upload = multer({ storage });
 
 // Public routes
 router.get('/', productController.getAllProducts);
+router.get('/wishlist', authenticate, productController.getWishlist);
+router.post('/:id/wishlist', authenticate, productController.toggleWishlist);
 router.get('/:id', productController.getProductById);
+router.get('/:id/reviews', productController.getProductReviews);
+router.post('/:id/reviews', authenticate, productController.addReview);
 
 // Admin only routes
 router.post('/', authenticate, requireAdmin, productController.createProduct);

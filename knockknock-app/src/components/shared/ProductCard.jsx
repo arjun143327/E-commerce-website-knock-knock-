@@ -1,17 +1,32 @@
-import React from 'react';
-import { Star, BadgeCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, BadgeCheck, Heart } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { ProductDetailsModal } from './ProductDetailsModal';
 
 export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }) => {
+  const { wishlistIds, toggleWishlist } = useApp();
+  const isWishlisted = wishlistIds.includes(product.id);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden">
-      <div className="p-4">
+    <>
+      <div 
+        onClick={() => setIsModalOpen(true)}
+        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden cursor-pointer"
+      >
+        <div className="p-4">
         <div className="flex gap-4">
-          <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-6xl">
+          <div className="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center text-6xl relative group">
             {product.image?.startsWith('/') ? (
               <img src={`http://localhost:3001${product.image}`} alt={product.name} className="w-full h-full object-cover" />
             ) : (
               product.image || '📦'
             )}
+            <button 
+              onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }}
+              className="absolute top-1 right-1 p-1.5 bg-white/80 rounded-full hover:bg-white transition opacity-0 group-hover:opacity-100 lg:opacity-100"
+            >
+              <Heart size={16} className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"} />
+            </button>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
@@ -52,7 +67,7 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
                 {cartItem ? (
                   <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl px-4 py-2 shadow-lg">
                     <button 
-                      onClick={() => onUpdateQuantity(product.id, -1)}
+                      onClick={(e) => { e.stopPropagation(); onUpdateQuantity(product.id, -1); }}
                       className="font-bold text-xl w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded transition"
                     >
                       −
@@ -61,7 +76,7 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
                       {cartItem.cartQuantity}
                     </span>
                     <button 
-                      onClick={() => onUpdateQuantity(product.id, 1)}
+                      onClick={(e) => { e.stopPropagation(); onUpdateQuantity(product.id, 1); }}
                       className="font-bold text-xl w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded transition"
                     >
                       +
@@ -69,7 +84,7 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
                   </div>
                 ) : (
                   <button 
-                    onClick={() => onAddToCart(product)}
+                    onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition transform active:scale-95 shadow-lg"
                   >
                     Add
@@ -82,6 +97,13 @@ export const ProductCard = ({ product, onAddToCart, cartItem, onUpdateQuantity }
           </div>
         </div>
       </div>
-    </div>
+
+      <ProductDetailsModal 
+        product={product} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        onAddToCart={onAddToCart}
+      />
+    </>
   );
 };

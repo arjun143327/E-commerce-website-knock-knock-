@@ -3,7 +3,7 @@ import { MapPin, Bell, Heart, Search, Filter } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const Header = () => {
-  const { userLocation, searchQuery, setSearchQuery, setCurrentScreen } = useApp();
+  const { userLocation, searchQuery, setSearchQuery, sortBy, setSortBy, setCurrentScreen } = useApp();
 
   return (
     <div className="bg-white shadow-sm sticky top-0 z-10">
@@ -37,19 +37,26 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-4 text-gray-400" size={20} />
-          <input 
-            type="text"
-            placeholder="Search for products, stores..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-12 py-4 text-gray-900 rounded-2xl focus:ring-2 focus:ring-purple-300 shadow-lg outline-none"
-          />
-          <button className="absolute right-4 top-4 text-gray-400">
-            <Filter size={20} />
-          </button>
+        <div className="relative flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-4 text-gray-400" size={20} />
+            <input 
+              type="text"
+              placeholder="Search for products, stores..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 text-gray-900 rounded-2xl focus:ring-2 focus:ring-purple-300 shadow-lg outline-none"
+            />
+          </div>
+          <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-white text-gray-900 rounded-2xl px-4 py-4 shadow-lg outline-none cursor-pointer focus:ring-2 focus:ring-purple-300"
+          >
+            <option value="">Sort</option>
+            <option value="price_low">Price: Low to High</option>
+            <option value="price_high">Price: High to Low</option>
+          </select>
         </div>
       </div>
     </div>

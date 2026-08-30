@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { getMe } from '../api/authApi';
+import { getWishlist, toggleWishlist as apiToggleWishlist } from '../api/productsApi';
 
 const AppContext = createContext();
 
@@ -27,6 +28,38 @@ export const AppProvider = ({ children }) => {
   const [selectedStore, setSelectedStore] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('');
+  const [wishlistIds, setWishlistIds] = useState([]);
+  const [trackingOrderId, setTrackingOrderId] = useState(null);
+
+  const fetchWishlist = async () => {
+    if (!user) return;
+    try {
+      const items = await getWishlist();
+      setWishlistIds(items.map(i => i.id));
+    } catch (error) {
+      console.error('Failed to fetch wishlist', error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) {
+      fetchWishlist();
+    }
+  }, [user]);
+
+  const toggleWishlist = async (productId) => {
+    try {
+      const res = await apiToggleWishlist(productId);
+      if (res.isWishlisted) {
+        setWishlistIds(prev => [...prev, productId]);
+      } else {
+        setWishlistIds(prev => prev.filter(id => id !== productId));
+      }
+    } catch (error) {
+      console.error('Failed to toggle wishlist', error);
+    }
+  };
 
   const login = (userData, token) => {
     localStorage.setItem('knockknock_token', token);
@@ -65,6 +98,12 @@ export const AppProvider = ({ children }) => {
     setSearchQuery,
     selectedCategory,
     setSelectedCategory,
+    sortBy,
+    setSortBy,
+    wishlistIds,
+    toggleWishlist,
+    trackingOrderId,
+    setTrackingOrderId,
     login,
     logout,
     refreshUser
